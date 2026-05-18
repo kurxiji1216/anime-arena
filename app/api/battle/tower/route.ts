@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle, BattleFighter } from '@/lib/game/battle'
+import { calcEffectiveStats } from '@/lib/game/stats'
 
 const GEMS_PER_FLOOR = 10
 
@@ -46,24 +47,28 @@ export async function POST(request: Request) {
 
   const currentFloor = profile.tower_floor ?? 1
 
-  // Verify player owns the chosen character
-  const { data: ownership } = await supabase
+  // Verify player owns the chosen character + get upgrade info
+  const { data: userChar } = await supabase
     .from('user_characters')
-    .select('character_id')
+    .select('character_id, level, stars')
     .eq('user_id', user.id)
     .eq('character_id', characterId)
     .single()
 
-  if (!ownership) return NextResponse.json({ error: "You don't own that character" }, { status: 403 })
+  if (!userChar) return NextResponse.json({ error: "You don't own that character" }, { status: 403 })
 
-  // Fetch player character
-  const { data: playerChar } = await supabase
+  // Fetch player character base stats
+  const { data: playerBase } = await supabase
     .from('characters')
     .select('*')
     .eq('id', characterId)
     .single()
 
-  if (!playerChar) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+  if (!playerBase) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+
+  // Apply level + star upgrades
+  const eff = calcEffectiveStats(playerBase, userChar.level ?? 1, userChar.stars ?? 1)
+  const playerChar = { ...playerBase, base_hp: eff.hp, base_atk: eff.atk, base_def: eff.def, base_speed: eff.speed }
 
   // Pick a random enemy from the appropriate rarity pool
   const rarities = rarityPoolForFloor(currentFloor)
