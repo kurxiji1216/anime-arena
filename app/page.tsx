@@ -123,24 +123,42 @@ export default function HomePage() {
         </div>
 
         {/* Main Actions */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-4">
+
+          {/* Battle — featured card */}
           <Link
-            href="/pull"
-            className="bg-violet-600 hover:bg-violet-500 rounded-2xl p-6 text-center transition-colors block"
+            href="/battle"
+            className="relative bg-gradient-to-r from-red-900 to-orange-900 hover:from-red-800 hover:to-orange-800 border border-red-700 rounded-2xl p-6 transition-colors block overflow-hidden"
           >
-            <div className="text-4xl mb-3">🎴</div>
-            <p className="font-black text-white text-lg">Pull</p>
-            <p className="text-violet-300 text-sm mt-1">10 gems each</p>
+            <div className="relative z-10">
+              <div className="text-4xl mb-2">⚔️</div>
+              <p className="font-black text-white text-2xl">Battle</p>
+              <p className="text-red-300 text-sm mt-1">Campaign · Infinite Tower</p>
+            </div>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-7xl opacity-20">🏆</div>
           </Link>
 
-          <Link
-            href="/collection"
-            className="bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-2xl p-6 text-center transition-colors block"
-          >
-            <div className="text-4xl mb-3">📚</div>
-            <p className="font-black text-white text-lg">Collection</p>
-            <p className="text-gray-500 text-sm mt-1">View your cards</p>
-          </Link>
+          {/* Pull + Collection */}
+          <div className="grid grid-cols-2 gap-4">
+            <Link
+              href="/pull"
+              className="bg-violet-600 hover:bg-violet-500 rounded-2xl p-6 text-center transition-colors block"
+            >
+              <div className="text-4xl mb-3">🎴</div>
+              <p className="font-black text-white text-lg">Pull</p>
+              <p className="text-violet-300 text-sm mt-1">10 gems each</p>
+            </Link>
+
+            <Link
+              href="/collection"
+              className="bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-2xl p-6 text-center transition-colors block"
+            >
+              <div className="text-4xl mb-3">📚</div>
+              <p className="font-black text-white text-lg">Collection</p>
+              <p className="text-gray-500 text-sm mt-1">View your cards</p>
+            </Link>
+          </div>
+
         </div>
 
       </div>
