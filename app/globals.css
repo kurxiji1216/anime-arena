@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap');
 
 :root {
   --background: #ffffff;
@@ -141,3 +142,40 @@ body {
   animation: details-reveal 0.4s ease-out forwards;
   opacity: 0;
 }
+
+/* ─── Home menu staggered entry ──────────────────────────── */
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.menu-in {
+  animation: menu-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+.menu-in-1 { animation-delay: 0.04s; }
+.menu-in-2 { animation-delay: 0.10s; }
+.menu-in-3 { animation-delay: 0.16s; }
+.menu-in-4 { animation-delay: 0.22s; }
+.menu-in-5 { animation-delay: 0.28s; }
+.menu-in-6 { animation-delay: 0.34s; }
+
+/* Game UI font */
+.font-game {
+  font-family: 'Rajdhani', 'Geist Sans', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+/* Nav card hover glow helpers */
+.nav-battle:hover  { box-shadow: 0 0 28px 4px rgba(239,68,68,0.35); }
+.nav-pull:hover    { box-shadow: 0 0 28px 4px rgba(139,92,246,0.35); }
+.nav-collect:hover { box-shadow: 0 0 28px 4px rgba(59,130,246,0.35); }
+.nav-pvp:hover     { box-shadow: 0 0 28px 4px rgba(236,72,153,0.35); }
+.nav-rank:hover    { box-shadow: 0 0 28px 4px rgba(245,158,11,0.35); }
+
+/* Gem pulse when value changes */
+@keyframes gem-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.gem-pop { animation: gem-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }

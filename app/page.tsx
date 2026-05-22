@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -15,22 +15,67 @@ type Profile = {
 
 const STREAK_MILESTONES: Record<number, number> = { 3: 40, 7: 100 }
 
-function streakFlame(days: number) {
-  if (days >= 7) return '🔥'
-  if (days >= 3) return '🟠'
-  return '✨'
+function streakColor(days: number) {
+  if (days >= 7) return { border: 'border-orange-500', bg: 'rgba(249,115,22,0.12)', text: 'text-orange-400', icon: '🔥' }
+  if (days >= 3) return { border: 'border-amber-500', bg: 'rgba(245,158,11,0.10)', text: 'text-amber-400', icon: '🟠' }
+  return { border: 'border-gray-700', bg: 'rgba(255,255,255,0.03)', text: 'text-gray-400', icon: '✦' }
 }
 
+const NAV_CARDS = [
+  {
+    href: '/pull',
+    label: 'PULL',
+    sub: '10 💎 per pull',
+    icon: '🎴',
+    cls: 'nav-pull',
+    gradient: 'linear-gradient(135deg, #1e0450 0%, #2d0a6b 50%, #1a0440 100%)',
+    border: 'rgba(139,92,246,0.4)',
+    accent: '#8b5cf6',
+  },
+  {
+    href: '/collection',
+    label: 'CARDS',
+    sub: 'My collection',
+    icon: '📚',
+    cls: 'nav-collect',
+    gradient: 'linear-gradient(135deg, #021433 0%, #0a2454 50%, #011028 100%)',
+    border: 'rgba(59,130,246,0.4)',
+    accent: '#3b82f6',
+  },
+  {
+    href: '/pvp',
+    label: 'PvP',
+    sub: '+15 💎 per win',
+    icon: '🥊',
+    cls: 'nav-pvp',
+    gradient: 'linear-gradient(135deg, #2d0030 0%, #4a0050 50%, #220024 100%)',
+    border: 'rgba(236,72,153,0.4)',
+    accent: '#ec4899',
+  },
+  {
+    href: '/leaderboard',
+    label: 'RANKS',
+    sub: 'Top players',
+    icon: '🏆',
+    cls: 'nav-rank',
+    gradient: 'linear-gradient(135deg, #1a1000 0%, #2e1c00 50%, #140c00 100%)',
+    border: 'rgba(245,158,11,0.4)',
+    accent: '#f59e0b',
+  },
+]
+
 export default function HomePage() {
-  const [profile, setProfile]       = useState<Profile | null>(null)
-  const [quests, setQuests]         = useState<Quest[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [claiming, setClaiming]     = useState(false)
-  const [claimMessage, setClaimMessage] = useState('')
+  const [profile, setProfile]             = useState<Profile | null>(null)
+  const [quests, setQuests]               = useState<Quest[]>([])
+  const [loading, setLoading]             = useState(true)
+  const [claiming, setClaiming]           = useState(false)
+  const [claimMsg, setClaimMsg]           = useState('')
   const [claimingQuest, setClaimingQuest] = useState<string | null>(null)
-  const [streakMsg, setStreakMsg]   = useState('')
-  const router = useRouter()
+  const [streakMsg, setStreakMsg]         = useState('')
+  const [gemPop, setGemPop]              = useState(false)
+  const router  = useRouter()
   const supabase = createClient()
+  const gemRef  = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     async function load() {
@@ -38,237 +83,279 @@ export default function HomePage() {
       if (!user) { router.push('/login'); return }
 
       const [profileRes, questsRes, streakRes] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('username, gems, last_daily_claim_at, streak_days')
-          .eq('user_id', user.id)
-          .single(),
+        supabase.from('profiles').select('username, gems, last_daily_claim_at, streak_days').eq('user_id', user.id).single(),
         fetch('/api/quests'),
         fetch('/api/streak', { method: 'POST' }),
       ])
 
       if (profileRes.data) setProfile(profileRes.data)
-
       if (questsRes.ok) {
         const q = await questsRes.json()
         setQuests(q.quests?.quests ?? [])
       }
-
       if (streakRes.ok) {
         const s = await streakRes.json()
-        // Refresh gems + streak after streak update
         if (!s.alreadyCounted) {
-          setProfile(prev => prev
-            ? { ...prev, streak_days: s.streak, gems: s.gemsAwarded > 0 ? s.gemsTotal : prev.gems }
-            : prev
-          )
-          if (s.gemsAwarded > 0) {
-            setStreakMsg(`🔥 Day ${s.milestone} streak! +${s.gemsAwarded} 💎 bonus!`)
-          }
+          setProfile(prev => prev ? { ...prev, streak_days: s.streak, ...(s.gemsAwarded > 0 ? { gems: s.gemsTotal } : {}) } : prev)
+          if (s.gemsAwarded > 0) setStreakMsg(`🔥 Day ${s.milestone} streak! +${s.gemsAwarded}💎 bonus!`)
         }
       }
-
       setLoading(false)
     }
     load()
   }, [])
 
+  function popGems() {
+    setGemPop(true)
+    setTimeout(() => setGemPop(false), 400)
+  }
+
   async function claimDaily() {
-    setClaiming(true)
-    setClaimMessage('')
-    const res = await fetch('/api/daily', { method: 'POST' })
+    setClaiming(true); setClaimMsg('')
+    const res  = await fetch('/api/daily', { method: 'POST' })
     const data = await res.json()
     if (res.ok) {
       setProfile(prev => prev ? { ...prev, gems: data.gemsTotal, last_daily_claim_at: new Date().toISOString() } : prev)
-      setClaimMessage(`+${data.gemsAwarded} gems claimed!`)
-      // Refresh quests since claim_daily quest is now done
+      setClaimMsg(`+${data.gemsAwarded}💎`)
+      popGems()
       const qRes = await fetch('/api/quests')
       if (qRes.ok) { const q = await qRes.json(); setQuests(q.quests?.quests ?? []) }
     } else {
-      setClaimMessage(data.error)
+      setClaimMsg(data.error)
     }
     setClaiming(false)
   }
 
   async function claimQuest(key: string) {
     setClaimingQuest(key)
-    const res = await fetch('/api/quests', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key }),
-    })
+    const res  = await fetch('/api/quests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) })
     const data = await res.json()
     if (res.ok) {
       setProfile(prev => prev ? { ...prev, gems: data.gemsTotal } : prev)
       setQuests(prev => prev.map(q => q.key === key ? { ...q, claimed: true } : q))
+      popGems()
     }
     setClaimingQuest(null)
   }
 
-  function canClaimDaily() {
-    if (!profile?.last_daily_claim_at) return true
-    return (Date.now() - new Date(profile.last_daily_claim_at).getTime()) / 3600000 >= 24
-  }
+  const canClaimDaily = !profile?.last_daily_claim_at ||
+    (Date.now() - new Date(profile.last_daily_claim_at).getTime()) / 3600000 >= 24
 
-  async function signOut() {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
+  async function signOut() { await supabase.auth.signOut(); router.push('/login') }
+
+  const streak = profile?.streak_days ?? 0
+  const sc     = streakColor(streak)
+  const nextMs = [3, 7].find(m => m > streak) ?? null
+  const claimableQuests = quests.filter(q => q.done && !q.claimed)
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-gray-500 animate-pulse">Loading...</div>
+      <main className="min-h-screen flex items-center justify-center" style={{ background: '#06061a' }}>
+        <div className="font-game text-indigo-400 tracking-widest text-sm animate-pulse">LOADING...</div>
       </main>
     )
   }
 
-  const streak = profile?.streak_days ?? 0
-  const nextMilestone = [3, 7].find(m => m > streak) ?? null
-
   return (
-    <main className="min-h-screen bg-gray-950 text-white p-6">
-      <div className="max-w-lg mx-auto">
+    <main className="min-h-screen text-white pb-8" style={{
+      background: 'radial-gradient(ellipse at 50% -10%, #1a1060 0%, #06061a 55%)',
+    }}>
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-black tracking-tight">⚔️ Anime Arena</h1>
-          <button onClick={signOut} className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
-            Sign out
+      {/* ── Sticky top bar ── */}
+      <header className="sticky top-0 z-40 px-4 py-3 flex items-center justify-between" style={{
+        background: 'rgba(6,6,26,0.85)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        <div className="flex items-center gap-2">
+          <span className="text-xl">⚔️</span>
+          <span className="font-game font-700 text-lg text-white tracking-widest">ANIME ARENA</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <span className="text-yellow-500 text-base">💎</span>
+            <span
+              ref={gemRef}
+              className={`font-game font-bold text-xl text-yellow-400 ${gemPop ? 'gem-pop' : ''}`}
+            >
+              {profile?.gems ?? 0}
+            </span>
+          </div>
+          <button onClick={signOut} className="text-gray-600 hover:text-gray-400 text-xs transition-colors font-game">
+            EXIT
           </button>
         </div>
+      </header>
 
-        {/* Gem Balance + Streak side by side */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-gray-900 rounded-2xl p-5 border border-gray-800">
-            <p className="text-gray-500 text-xs mb-1">Balance</p>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black text-yellow-400">{profile?.gems ?? 0}</span>
-              <span className="text-yellow-600 text-sm font-semibold">💎</span>
-            </div>
-          </div>
+      <div className="max-w-md mx-auto px-4 pt-5 space-y-3">
 
-          <div className={`rounded-2xl p-5 border ${streak >= 7 ? 'bg-orange-950 border-orange-700' : streak >= 3 ? 'bg-amber-950 border-amber-700' : 'bg-gray-900 border-gray-800'}`}>
-            <p className="text-gray-400 text-xs mb-1">Login Streak</p>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black text-white">{streak}</span>
-              <span className="text-lg">{streakFlame(streak)}</span>
-            </div>
-            <p className="text-gray-500 text-[10px] mt-0.5">
-              {nextMilestone
-                ? `Day ${nextMilestone} → +${STREAK_MILESTONES[nextMilestone]}💎`
-                : streak >= 7 ? '+100💎 / day 7' : 'Log in daily!'}
-            </p>
-          </div>
-        </div>
-
-        {/* Streak milestone toast */}
+        {/* ── Streak milestone toast ── */}
         {streakMsg && (
-          <div className="bg-orange-950 border border-orange-600 text-orange-300 text-sm font-bold rounded-xl px-4 py-3 mb-4 text-center">
+          <div className="menu-in menu-in-1 rounded-xl px-4 py-3 text-center font-game font-bold text-sm" style={{
+            background: 'linear-gradient(135deg, rgba(249,115,22,0.2), rgba(245,158,11,0.15))',
+            border: '1px solid rgba(249,115,22,0.4)',
+            color: '#fb923c',
+          }}>
             {streakMsg}
           </div>
         )}
 
-        {/* Daily Bonus */}
-        <div className="bg-gray-900 rounded-2xl p-5 border border-gray-800 mb-4">
-          <div className="flex items-center justify-between">
+        {/* ── Streak + Daily row ── */}
+        <div className="menu-in menu-in-1 grid grid-cols-2 gap-3">
+
+          {/* Streak */}
+          <div className="rounded-2xl p-4" style={{
+            background: sc.bg,
+            border: `1px solid ${sc.border.replace('border-', '')}`,
+            borderColor: streak >= 7 ? 'rgba(249,115,22,0.5)' : streak >= 3 ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.07)',
+          }}>
+            <p className="font-game text-gray-500 text-xs tracking-widest mb-1">STREAK</p>
+            <div className="flex items-end gap-1.5">
+              <span className={`font-game font-bold text-4xl leading-none ${sc.text}`}>{streak}</span>
+              <span className="text-2xl mb-0.5">{sc.icon}</span>
+            </div>
+            <p className="text-gray-600 text-[10px] font-game mt-1.5">
+              {nextMs ? `Day ${nextMs} → +${STREAK_MILESTONES[nextMs]}💎` : streak >= 7 ? 'MAX BONUS ACTIVE' : 'LOGIN DAILY'}
+            </p>
+          </div>
+
+          {/* Daily Bonus */}
+          <div className="rounded-2xl p-4 flex flex-col justify-between" style={{
+            background: canClaimDaily ? 'rgba(234,179,8,0.08)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${canClaimDaily ? 'rgba(234,179,8,0.35)' : 'rgba(255,255,255,0.07)'}`,
+          }}>
             <div>
-              <p className="font-bold text-white">Daily Bonus</p>
-              <p className="text-gray-500 text-sm">+20 gems every 24 hours</p>
+              <p className="font-game text-gray-500 text-xs tracking-widest mb-1">DAILY</p>
+              <p className="font-game font-bold text-white text-sm">+20 💎</p>
+              {claimMsg && (
+                <p className={`text-xs font-game mt-1 ${claimMsg.startsWith('+') ? 'text-yellow-400' : 'text-gray-500'}`}>
+                  {claimMsg}
+                </p>
+              )}
             </div>
             <button
               onClick={claimDaily}
-              disabled={claiming || !canClaimDaily()}
-              className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black rounded-xl px-5 py-2.5 transition-colors text-sm"
+              disabled={claiming || !canClaimDaily}
+              className="mt-2 w-full font-game font-bold text-xs rounded-lg py-2 transition-all"
+              style={{
+                background: canClaimDaily ? 'linear-gradient(135deg, #d97706, #f59e0b)' : 'rgba(255,255,255,0.06)',
+                color: canClaimDaily ? '#000' : '#4b5563',
+                cursor: canClaimDaily ? 'pointer' : 'default',
+              }}
             >
-              {claiming ? 'Claiming...' : canClaimDaily() ? 'Claim!' : 'Claimed ✓'}
+              {claiming ? '...' : canClaimDaily ? 'CLAIM!' : 'CLAIMED ✓'}
             </button>
           </div>
-          {claimMessage && (
-            <p className={`text-sm mt-3 font-medium ${claimMessage.startsWith('+') ? 'text-yellow-400' : 'text-gray-400'}`}>
-              {claimMessage}
-            </p>
-          )}
         </div>
 
-        {/* Daily Quests */}
-        {quests.length > 0 && (
-          <div className="bg-gray-900 rounded-2xl border border-gray-800 mb-6 overflow-hidden">
-            <div className="px-5 pt-4 pb-3 border-b border-gray-800 flex items-center justify-between">
-              <p className="font-black text-white">Daily Quests</p>
-              <p className="text-gray-600 text-xs">Resets at midnight</p>
-            </div>
-            <div className="divide-y divide-gray-800">
-              {quests.map(q => (
-                <div key={q.key} className="flex items-center justify-between px-5 py-3.5">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${q.done ? 'bg-green-500 border-green-500' : 'border-gray-600'}`}>
-                      {q.done && <span className="text-[10px] text-white font-black">✓</span>}
-                    </div>
-                    <div>
-                      <p className={`text-sm font-semibold ${q.claimed ? 'text-gray-600 line-through' : q.done ? 'text-white' : 'text-gray-300'}`}>
-                        {q.label}
-                      </p>
-                      <p className="text-gray-600 text-xs">+{q.reward} 💎</p>
-                    </div>
+        {/* ── Daily Quests ── */}
+        <div className="menu-in menu-in-2 rounded-2xl overflow-hidden" style={{
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.07)',
+        }}>
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <span className="font-game font-bold text-sm tracking-widest text-white">DAILY QUESTS</span>
+            {claimableQuests.length > 0 && (
+              <span className="font-game text-[10px] text-green-400 bg-green-900/40 border border-green-700/50 px-2 py-0.5 rounded-full">
+                {claimableQuests.length} READY
+              </span>
+            )}
+          </div>
+          <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+            {quests.map((q, i) => {
+              const questColors: Record<string, string> = {
+                do_pull: '#8b5cf6', claim_daily: '#f59e0b', level_up: '#22c55e'
+              }
+              const color = questColors[q.key] ?? '#6b7280'
+              return (
+                <div key={q.key} className="flex items-center gap-3 px-4 py-3">
+                  {/* Color bar */}
+                  <div className="w-1 h-8 rounded-full flex-shrink-0" style={{ background: q.done ? color : 'rgba(255,255,255,0.1)' }} />
+                  {/* Checkmark */}
+                  <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center" style={{
+                    background: q.done ? color : 'rgba(255,255,255,0.05)',
+                    border: `1.5px solid ${q.done ? color : 'rgba(255,255,255,0.15)'}`,
+                  }}>
+                    {q.done && <span className="text-white text-[9px] font-black">✓</span>}
                   </div>
-                  {q.done && !q.claimed && (
+                  {/* Label */}
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-game font-semibold text-sm ${q.claimed ? 'line-through text-gray-600' : q.done ? 'text-white' : 'text-gray-400'}`}>
+                      {q.label}
+                    </p>
+                    <p className="font-game text-[10px]" style={{ color: q.done && !q.claimed ? color : '#4b5563' }}>
+                      +{q.reward} 💎
+                    </p>
+                  </div>
+                  {/* Claim / status */}
+                  {q.done && !q.claimed ? (
                     <button
                       onClick={() => claimQuest(q.key)}
                       disabled={claimingQuest === q.key}
-                      className="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-black rounded-lg px-3 py-1.5 transition-colors"
+                      className="font-game font-bold text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-all hover:brightness-110"
+                      style={{ background: color, color: '#000' }}
                     >
-                      {claimingQuest === q.key ? '...' : `+${q.reward} 💎`}
+                      {claimingQuest === q.key ? '...' : `+${q.reward}💎`}
                     </button>
-                  )}
-                  {q.claimed && (
-                    <span className="text-gray-600 text-xs font-semibold">Claimed ✓</span>
-                  )}
+                  ) : q.claimed ? (
+                    <span className="font-game text-[10px] text-gray-700">DONE</span>
+                  ) : null}
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
-        )}
-
-        {/* Main Actions */}
-        <div className="flex flex-col gap-4">
-
-          <Link href="/battle" className="relative bg-gradient-to-r from-red-900 to-orange-900 hover:from-red-800 hover:to-orange-800 border border-red-700 rounded-2xl p-6 transition-colors block overflow-hidden">
-            <div className="relative z-10">
-              <div className="text-4xl mb-2">⚔️</div>
-              <p className="font-black text-white text-2xl">Battle</p>
-              <p className="text-red-300 text-sm mt-1">Campaign · Infinite Tower</p>
-            </div>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-7xl opacity-20">🏆</div>
-          </Link>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Link href="/pull" className="bg-violet-600 hover:bg-violet-500 rounded-2xl p-6 text-center transition-colors block">
-              <div className="text-4xl mb-3">🎴</div>
-              <p className="font-black text-white text-lg">Pull</p>
-              <p className="text-violet-300 text-sm mt-1">10 gems each</p>
-            </Link>
-            <Link href="/collection" className="bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-2xl p-6 text-center transition-colors block">
-              <div className="text-4xl mb-3">📚</div>
-              <p className="font-black text-white text-lg">Collection</p>
-              <p className="text-gray-500 text-sm mt-1">View your cards</p>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Link href="/pvp" className="bg-gradient-to-br from-violet-900 to-violet-800 hover:from-violet-800 hover:to-violet-700 border border-violet-700 rounded-2xl p-6 text-center transition-colors block">
-              <div className="text-4xl mb-3">🥊</div>
-              <p className="font-black text-white text-lg">PvP</p>
-              <p className="text-violet-300 text-sm mt-1">Fight players · +15 💎</p>
-            </Link>
-            <Link href="/leaderboard" className="bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-2xl p-6 text-center transition-colors block">
-              <div className="text-4xl mb-3">🏆</div>
-              <p className="font-black text-white text-lg">Leaderboard</p>
-              <p className="text-gray-500 text-sm mt-1">Top players</p>
-            </Link>
-          </div>
-
         </div>
+
+        {/* ── BATTLE — hero card ── */}
+        <Link href="/battle" className="menu-in menu-in-3 nav-battle block rounded-2xl overflow-hidden relative transition-all duration-200 hover:scale-[1.02]" style={{
+          background: 'linear-gradient(135deg, #3d0808 0%, #1a0303 60%, #0d0202 100%)',
+          border: '1px solid rgba(239,68,68,0.35)',
+          minHeight: '110px',
+        }}>
+          {/* Background glow blob */}
+          <div className="absolute inset-0" style={{
+            background: 'radial-gradient(ellipse at 20% 50%, rgba(239,68,68,0.2) 0%, transparent 60%)',
+          }} />
+          {/* Big faded icon */}
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 text-[80px] opacity-10 select-none">⚔️</div>
+          <div className="relative z-10 p-5">
+            <p className="font-game font-bold text-[10px] tracking-widest text-red-500 mb-1">FEATURED</p>
+            <p className="font-game font-bold text-3xl text-white leading-none">BATTLE</p>
+            <p className="font-game text-red-400 text-sm mt-1">Campaign · Infinite Tower</p>
+          </div>
+        </Link>
+
+        {/* ── Nav grid 2×2 ── */}
+        <div className="menu-in menu-in-4 grid grid-cols-2 gap-3">
+          {NAV_CARDS.map(card => (
+            <Link
+              key={card.href}
+              href={card.href}
+              className={`${card.cls} block rounded-2xl overflow-hidden relative transition-all duration-200 hover:scale-[1.03]`}
+              style={{
+                background: card.gradient,
+                border: `1px solid ${card.border}`,
+                minHeight: '100px',
+              }}
+            >
+              <div className="absolute inset-0" style={{
+                background: `radial-gradient(ellipse at 15% 50%, ${card.accent}22 0%, transparent 65%)`,
+              }} />
+              <div className="absolute right-3 bottom-2 text-[48px] opacity-10 select-none leading-none">{card.icon}</div>
+              <div className="relative z-10 p-4">
+                <div className="text-2xl mb-1">{card.icon}</div>
+                <p className="font-game font-bold text-base text-white leading-none">{card.label}</p>
+                <p className="font-game text-[11px] mt-1" style={{ color: card.accent }}>{card.sub}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* ── Footer ── */}
+        <p className="menu-in menu-in-6 text-center font-game text-[10px] tracking-widest text-gray-800 pt-2">
+          ANIME ARENA · COLLECT · BATTLE · DOMINATE
+        </p>
+
       </div>
     </main>
   )
