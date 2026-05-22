@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle, BattleFighter } from '@/lib/game/battle'
 import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
+import { applyPlayerXP, playerStatBonus, PLAYER_XP_REWARDS } from '@/lib/game/player'
 
 const GEMS_PER_FLOOR = 10
 
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
   // Get player profile (floor + gems)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('gems, tower_floor, tower_best_floor')
+    .select('gems, tower_floor, tower_best_floor, player_level, player_xp')
     .eq('user_id', user.id)
     .single()
 
@@ -66,9 +67,16 @@ export async function POST(request: Request) {
 
   if (!playerBase) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
 
-  // Apply level + star upgrades
+  // Apply level + star upgrades, then player rank stat bonus (PvE only)
   const eff = calcEffectiveStats(playerBase, userChar.level ?? 1, userChar.stars ?? 1)
-  const playerChar = { ...playerBase, base_hp: eff.hp, base_atk: eff.atk, base_def: eff.def, base_speed: eff.speed }
+  const pBonus = playerStatBonus(profile?.player_level ?? 1)
+  const playerChar = {
+    ...playerBase,
+    base_hp:    Math.round(eff.hp    * pBonus),
+    base_atk:   Math.round(eff.atk   * pBonus),
+    base_def:   Math.round(eff.def   * pBonus),
+    base_speed: Math.round(eff.speed * pBonus),
+  }
 
   // Pick a random enemy from the appropriate rarity pool
   const rarities = rarityPoolForFloor(currentFloor)
@@ -93,13 +101,15 @@ export async function POST(request: Request) {
   let xpGained = 0
   let levelsGained = 0
   let milestoneGems = 0
+  let playerXpGained = 0
+  let newPlayerRank: string | null = null
 
   if (result.winner === 'player') {
     gemsAwarded = GEMS_PER_FLOOR
     newFloor = currentFloor + 1
     newBest = Math.max(newBest, currentFloor)
 
-    // Award XP to the winning character (scales with floor difficulty)
+    // Award card XP to the winning character (scales with floor difficulty)
     xpGained = BATTLE_XP.tower(currentFloor)
     const maxLevel = maxLevelForStars(userChar.stars ?? 1)
     const xpResult = applyXP(userChar.level ?? 1, userChar.xp ?? 0, xpGained, maxLevel)
@@ -112,12 +122,23 @@ export async function POST(request: Request) {
       .eq('user_id', user.id)
       .eq('character_id', characterId)
 
+    // Award player account XP
+    playerXpGained = PLAYER_XP_REWARDS.towerWin
+    const playerXpResult = applyPlayerXP(
+      profile.player_level ?? 1,
+      profile.player_xp ?? 0,
+      playerXpGained,
+    )
+    newPlayerRank = playerXpResult.newRank
+
     await supabase
       .from('profiles')
       .update({
-        gems: profile.gems + gemsAwarded + milestoneGems,
-        tower_floor: newFloor,
+        gems:             profile.gems + gemsAwarded + milestoneGems + playerXpResult.gemsToAward,
+        tower_floor:      newFloor,
         tower_best_floor: newBest,
+        player_level:     playerXpResult.newLevel,
+        player_xp:        playerXpResult.newXp,
       })
       .eq('user_id', user.id)
   } else {
@@ -140,5 +161,7 @@ export async function POST(request: Request) {
     xpGained,
     levelsGained,
     milestoneGems,
+    playerXpGained,
+    newPlayerRank,
   })
 }

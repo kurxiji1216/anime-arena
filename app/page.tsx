@@ -5,12 +5,15 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Quest } from '@/lib/game/quests'
+import { getHunterRank } from '@/lib/game/player'
 
 type Profile = {
   username: string | null
   gems: number
   last_daily_claim_at: string | null
   streak_days: number
+  player_level: number
+  player_xp: number
 }
 
 const STREAK_MILESTONES: Record<number, number> = { 3: 40, 7: 100 }
@@ -83,7 +86,7 @@ export default function HomePage() {
       if (!user) { router.push('/login'); return }
 
       const [profileRes, questsRes, streakRes] = await Promise.all([
-        supabase.from('profiles').select('username, gems, last_daily_claim_at, streak_days').eq('user_id', user.id).single(),
+        supabase.from('profiles').select('username, gems, last_daily_claim_at, streak_days, player_level, player_xp').eq('user_id', user.id).single(),
         fetch('/api/quests'),
         fetch('/api/streak', { method: 'POST' }),
       ])
@@ -162,30 +165,59 @@ export default function HomePage() {
     }}>
 
       {/* ── Sticky top bar ── */}
-      <header className="sticky top-0 z-40 px-4 py-3 flex items-center justify-between" style={{
-        background: 'rgba(6,6,26,0.85)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}>
-        <div className="flex items-center gap-2">
-          <span className="text-xl">⚔️</span>
-          <span className="font-game font-700 text-lg text-white tracking-widest">ANIME ARENA</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            <span className="text-yellow-500 text-base">💎</span>
-            <span
-              ref={gemRef}
-              className={`font-game font-bold text-xl text-yellow-400 ${gemPop ? 'gem-pop' : ''}`}
-            >
-              {profile?.gems ?? 0}
-            </span>
-          </div>
-          <button onClick={signOut} className="text-gray-600 hover:text-gray-400 text-xs transition-colors font-game">
-            EXIT
-          </button>
-        </div>
-      </header>
+      {(() => {
+        const playerLevel = profile?.player_level ?? 1
+        const playerXp    = profile?.player_xp ?? 0
+        const rank        = getHunterRank(playerLevel)
+        return (
+          <header className="sticky top-0 z-40 px-4 py-2.5 flex items-center justify-between" style={{
+            background: 'rgba(6,6,26,0.85)',
+            backdropFilter: 'blur(12px)',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+          }}>
+            {/* Left: title */}
+            <div className="flex items-center gap-2">
+              <span className="text-xl">⚔️</span>
+              <span className="font-game font-700 text-lg text-white tracking-widest">ANIME ARENA</span>
+            </div>
+
+            {/* Right: rank badge + level + gems + exit */}
+            <div className="flex items-center gap-3">
+
+              {/* Hunter rank badge */}
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="font-game font-black text-xs px-2 py-0.5 rounded"
+                  style={{ background: `${rank.color}22`, border: `1px solid ${rank.color}66`, color: rank.color }}
+                >
+                  {rank.rank}
+                </span>
+                <span className="font-game font-bold text-sm" style={{ color: rank.color }}>
+                  Lv.{playerLevel}
+                </span>
+              </div>
+
+              {/* Divider */}
+              <span className="text-gray-800 text-xs">|</span>
+
+              {/* Gems */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-yellow-500 text-base">💎</span>
+                <span
+                  ref={gemRef}
+                  className={`font-game font-bold text-xl text-yellow-400 ${gemPop ? 'gem-pop' : ''}`}
+                >
+                  {profile?.gems ?? 0}
+                </span>
+              </div>
+
+              <button onClick={signOut} className="text-gray-600 hover:text-gray-400 text-xs transition-colors font-game">
+                EXIT
+              </button>
+            </div>
+          </header>
+        )
+      })()}
 
       <div className="max-w-md mx-auto px-4 pt-5 space-y-3">
 

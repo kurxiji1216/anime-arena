@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle } from '@/lib/game/battle'
 import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
+import { applyPlayerXP, PLAYER_XP_REWARDS } from '@/lib/game/player'
 
 const RARITY_ORDER: Record<string, number> = { legendary: 4, epic: 3, rare: 2, common: 1 }
 const WIN_REWARD = 15
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
   // Update player's PvP record
   const { data: profile } = await supabase
     .from('profiles')
-    .select('gems, pvp_wins, pvp_battles')
+    .select('gems, pvp_wins, pvp_battles, player_level, player_xp')
     .eq('user_id', user.id)
     .single()
 
@@ -85,9 +86,11 @@ export async function POST(request: Request) {
   let xpGained = 0
   let levelsGained = 0
   let milestoneGems = 0
+  let playerXpGained = 0
+  let newPlayerRank: string | null = null
 
   if (result.winner === 'player') {
-    // Award XP to winning character
+    // Award card XP to winning character
     xpGained = BATTLE_XP.pvpWin
     const maxLevel = maxLevelForStars(userChar.stars ?? 1)
     const xpResult = applyXP(userChar.level ?? 1, userChar.xp ?? 0, xpGained, maxLevel)
@@ -99,16 +102,35 @@ export async function POST(request: Request) {
       .update({ level: xpResult.newLevel, xp: xpResult.newXp })
       .eq('user_id', user.id)
       .eq('character_id', characterId)
-  }
 
-  await supabase
-    .from('profiles')
-    .update({
-      pvp_wins:    profile.pvp_wins    + (result.winner === 'player' ? 1 : 0),
-      pvp_battles: profile.pvp_battles + 1,
-      gems:        profile.gems + gemsAwarded + milestoneGems,
-    })
-    .eq('user_id', user.id)
+    // Award player account XP (no stat bonus in PvP — fair matchmaking)
+    playerXpGained = PLAYER_XP_REWARDS.pvpWin
+    const playerXpResult = applyPlayerXP(
+      profile.player_level ?? 1,
+      profile.player_xp ?? 0,
+      playerXpGained,
+    )
+    newPlayerRank = playerXpResult.newRank
+
+    await supabase
+      .from('profiles')
+      .update({
+        pvp_wins:     profile.pvp_wins + 1,
+        pvp_battles:  profile.pvp_battles + 1,
+        gems:         profile.gems + gemsAwarded + milestoneGems + playerXpResult.gemsToAward,
+        player_level: playerXpResult.newLevel,
+        player_xp:    playerXpResult.newXp,
+      })
+      .eq('user_id', user.id)
+  } else {
+    // Loss — still count battle, no gems or XP
+    await supabase
+      .from('profiles')
+      .update({
+        pvp_battles: profile.pvp_battles + 1,
+      })
+      .eq('user_id', user.id)
+  }
 
   return NextResponse.json({
     ...result,
@@ -118,5 +140,7 @@ export async function POST(request: Request) {
     xpGained,
     levelsGained,
     milestoneGems,
+    playerXpGained,
+    newPlayerRank,
   })
 }

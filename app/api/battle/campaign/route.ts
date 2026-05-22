@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { runBattle } from '@/lib/game/battle'
 import { getStage, isStageUnlocked } from '@/lib/game/campaign'
 import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
+import { applyPlayerXP, playerStatBonus, PLAYER_XP_REWARDS } from '@/lib/game/player'
 
 const REPLAY_REWARD = 5
 
@@ -50,9 +51,23 @@ export async function POST(request: Request) {
 
   if (!playerBase) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
 
-  // Apply level + star upgrades to player stats
+  // Fetch profile early — needed for player rank bonus before battle
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('gems, player_level, player_xp')
+    .eq('user_id', user.id)
+    .single()
+
+  // Apply level + star upgrades, then player rank stat bonus (PvE only)
   const eff = calcEffectiveStats(playerBase, userChar.level ?? 1, userChar.stars ?? 1)
-  const playerChar = { ...playerBase, base_hp: eff.hp, base_atk: eff.atk, base_def: eff.def, base_speed: eff.speed }
+  const pBonus = playerStatBonus(profile?.player_level ?? 1)
+  const playerChar = {
+    ...playerBase,
+    base_hp:    Math.round(eff.hp    * pBonus),
+    base_atk:   Math.round(eff.atk   * pBonus),
+    base_def:   Math.round(eff.def   * pBonus),
+    base_speed: Math.round(eff.speed * pBonus),
+  }
 
   // Fetch enemy character by name from campaign config
   const { data: enemyChar } = await supabase
@@ -72,6 +87,8 @@ export async function POST(request: Request) {
   let xpGained = 0
   let levelsGained = 0
   let milestoneGems = 0
+  let playerXpGained = 0
+  let newPlayerRank: string | null = null
 
   if (result.winner === 'player') {
     gemsAwarded = alreadyCleared ? REPLAY_REWARD : stageConfig.reward
@@ -82,7 +99,7 @@ export async function POST(request: Request) {
         .insert({ user_id: user.id, arc, stage })
     }
 
-    // Award XP to the winning character
+    // Award card XP to the winning character
     xpGained = alreadyCleared ? BATTLE_XP.campaignReplay : BATTLE_XP.campaignFirst
     const maxLevel = maxLevelForStars(userChar.stars ?? 1)
     const xpResult = applyXP(userChar.level ?? 1, userChar.xp ?? 0, xpGained, maxLevel)
@@ -95,18 +112,23 @@ export async function POST(request: Request) {
       .eq('user_id', user.id)
       .eq('character_id', characterId)
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('gems')
-      .eq('user_id', user.id)
-      .single()
+    // Award player account XP
+    playerXpGained = PLAYER_XP_REWARDS.campaignWin
+    const playerXpResult = applyPlayerXP(
+      profile?.player_level ?? 1,
+      profile?.player_xp ?? 0,
+      playerXpGained,
+    )
+    newPlayerRank = playerXpResult.newRank
 
-    if (profile) {
-      await supabase
-        .from('profiles')
-        .update({ gems: profile.gems + gemsAwarded + milestoneGems })
-        .eq('user_id', user.id)
-    }
+    await supabase
+      .from('profiles')
+      .update({
+        gems: (profile?.gems ?? 0) + gemsAwarded + milestoneGems + playerXpResult.gemsToAward,
+        player_level: playerXpResult.newLevel,
+        player_xp:    playerXpResult.newXp,
+      })
+      .eq('user_id', user.id)
   }
 
   return NextResponse.json({
@@ -116,5 +138,7 @@ export async function POST(request: Request) {
     xpGained,
     levelsGained,
     milestoneGems,
+    playerXpGained,
+    newPlayerRank,
   })
 }

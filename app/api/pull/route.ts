@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveQuests, markDone } from '@/lib/game/quests'
+import { applyPlayerXP, PLAYER_XP_REWARDS } from '@/lib/game/player'
 
 const PULL_COST = 10
 
@@ -22,7 +23,7 @@ export async function POST() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('gems, daily_quests')
+    .select('gems, daily_quests, player_level, player_xp')
     .eq('user_id', user.id)
     .single()
 
@@ -44,9 +45,22 @@ export async function POST() {
   const character = characters[Math.floor(Math.random() * characters.length)]
 
   const updatedQuests = markDone(resolveQuests(profile.daily_quests), 'do_pull')
+
+  // Award player account XP for pulling
+  const playerXpResult = applyPlayerXP(
+    profile.player_level ?? 1,
+    profile.player_xp ?? 0,
+    PLAYER_XP_REWARDS.pull,
+  )
+
   await supabase
     .from('profiles')
-    .update({ gems: profile.gems - PULL_COST, daily_quests: updatedQuests })
+    .update({
+      gems:         profile.gems - PULL_COST + playerXpResult.gemsToAward,
+      daily_quests: updatedQuests,
+      player_level: playerXpResult.newLevel,
+      player_xp:    playerXpResult.newXp,
+    })
     .eq('user_id', user.id)
 
   const { data: existing } = await supabase
@@ -72,5 +86,12 @@ export async function POST() {
       .insert({ user_id: user.id, character_id: character.id })
   }
 
-  return NextResponse.json({ character, gemsRemaining: profile.gems - PULL_COST, isNew, totalCount })
+  return NextResponse.json({
+    character,
+    gemsRemaining: profile.gems - PULL_COST + playerXpResult.gemsToAward,
+    isNew,
+    totalCount,
+    playerXpGained: PLAYER_XP_REWARDS.pull,
+    newPlayerRank:  playerXpResult.newRank,
+  })
 }

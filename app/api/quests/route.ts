@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveQuests, type QuestKey } from '@/lib/game/quests'
+import { applyPlayerXP, PLAYER_XP_REWARDS } from '@/lib/game/player'
 
 // GET /api/quests — fetch today's quests (initialises if new day)
 export async function GET() {
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('daily_quests, gems')
+    .select('daily_quests, gems, player_level, player_xp')
     .eq('user_id', user.id)
     .single()
 
@@ -49,17 +50,33 @@ export async function POST(request: Request) {
   if (!quest.done)   return NextResponse.json({ error: 'Quest not completed yet' }, { status: 400 })
   if (quest.claimed) return NextResponse.json({ error: 'Already claimed' }, { status: 400 })
 
-  // Mark claimed and award gems
+  // Mark claimed and award gems + player XP
   const updated = {
     ...quests,
     quests: quests.quests.map(q => q.key === key ? { ...q, claimed: true } : q),
   }
-  const newGems = profile.gems + quest.reward
+
+  const playerXpResult = applyPlayerXP(
+    profile.player_level ?? 1,
+    profile.player_xp ?? 0,
+    PLAYER_XP_REWARDS.questClaim,
+  )
+  const newGems = profile.gems + quest.reward + playerXpResult.gemsToAward
 
   await supabase
     .from('profiles')
-    .update({ daily_quests: updated, gems: newGems })
+    .update({
+      daily_quests: updated,
+      gems:         newGems,
+      player_level: playerXpResult.newLevel,
+      player_xp:    playerXpResult.newXp,
+    })
     .eq('user_id', user.id)
 
-  return NextResponse.json({ gemsAwarded: quest.reward, gemsTotal: newGems })
+  return NextResponse.json({
+    gemsAwarded:    quest.reward,
+    gemsTotal:      newGems,
+    playerXpGained: PLAYER_XP_REWARDS.questClaim,
+    newPlayerRank:  playerXpResult.newRank,
+  })
 }
