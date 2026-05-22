@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { levelUpCost, maxLevelForStars } from '@/lib/game/stats'
+import { levelUpCost, maxLevelForStars, MILESTONE_GEMS } from '@/lib/game/stats'
 import { resolveQuests, markDone } from '@/lib/game/quests'
 
 export async function POST(request: Request) {
@@ -42,19 +42,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Not enough gems. Need ${cost} 💎` }, { status: 400 })
   }
 
-  // Deduct gems, increment level, mark quest done
+  const newLevel = level + 1
+  const milestoneGems = MILESTONE_GEMS[newLevel] ?? 0
+
+  // Deduct gems, increment level, reset xp, award milestone gems, mark quest done
   const updatedQuests = markDone(resolveQuests(profile.daily_quests), 'level_up')
+  const netGems = profile.gems - cost + milestoneGems
   const [, levelResult] = await Promise.all([
-    supabase.from('profiles').update({ gems: profile.gems - cost, daily_quests: updatedQuests }).eq('user_id', user.id),
-    supabase.from('user_characters').update({ level: level + 1 }).eq('user_id', user.id).eq('character_id', characterId),
+    supabase.from('profiles').update({ gems: netGems, daily_quests: updatedQuests }).eq('user_id', user.id),
+    supabase.from('user_characters').update({ level: newLevel, xp: 0 }).eq('user_id', user.id).eq('character_id', characterId),
   ])
 
   if (levelResult.error) return NextResponse.json({ error: 'Failed to level up' }, { status: 500 })
 
   return NextResponse.json({
-    newLevel: level + 1,
+    newLevel,
+    newXp: 0,
     gemsSpent: cost,
-    gemsRemaining: profile.gems - cost,
+    milestoneGems,
+    gemsRemaining: netGems,
     maxLevel,
   })
 }

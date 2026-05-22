@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { calcEffectiveStats, levelUpCost, maxLevelForStars, minCountForStarUp, starUpCopiesNeeded } from '@/lib/game/stats'
+import { calcEffectiveStats, levelUpCost, maxLevelForStars, minCountForStarUp, starUpCopiesNeeded, xpToNextLevel } from '@/lib/game/stats'
 
 type OwnedCharacter = {
   id: string        // user_characters row id (not used directly)
   count: number
   level: number
   stars: number
+  xp: number
   character: {
     id: string
     name: string
@@ -65,7 +66,7 @@ export default function CollectionPage() {
     const [cardsRes, profileRes] = await Promise.all([
       supabase
         .from('user_characters')
-        .select('count, level, stars, character:characters(id, name, source_anime, rarity, image_url, base_hp, base_atk, base_def, base_speed)')
+        .select('count, level, stars, xp, character:characters(id, name, source_anime, rarity, image_url, base_hp, base_atk, base_def, base_speed)')
         .eq('user_id', user.id),
       supabase.from('profiles').select('gems').eq('user_id', user.id).single(),
     ])
@@ -97,13 +98,45 @@ export default function CollectionPage() {
       setUpgradeMsg(data.error)
     } else {
       setGems(data.gemsRemaining)
-      // Update local state
-      const updated = { ...selected, level: data.newLevel }
+      // Update local state — xp resets to 0 on gem level-up
+      const updated = { ...selected, level: data.newLevel, xp: 0 }
       setSelected(updated)
       setOwned(prev => prev.map(o =>
-        o.character.id === selected.character.id ? { ...o, level: data.newLevel } : o
+        o.character.id === selected.character.id ? { ...o, level: data.newLevel, xp: 0 } : o
       ))
-      setUpgradeMsg(`⬆️ Now Level ${data.newLevel}! (−${data.gemsSpent} 💎)`)
+      const milestoneNote = data.milestoneGems > 0 ? ` 🎯 +${data.milestoneGems}💎 milestone!` : ''
+      setUpgradeMsg(`⬆️ Now Level ${data.newLevel}! (−${data.gemsSpent} 💎)${milestoneNote}`)
+    }
+    setUpgrading(false)
+  }
+
+  async function xpLevelUp() {
+    if (!selected) return
+    setUpgrading(true)
+    setUpgradeMsg('')
+
+    const res = await fetch('/api/upgrade/xp-level', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ characterId: selected.character.id }),
+    })
+    const data = await res.json()
+
+    if (!res.ok) {
+      setUpgradeMsg(data.error)
+    } else {
+      // Update local state — preserve leftover xp
+      const updated = { ...selected, level: data.newLevel, xp: data.newXp }
+      setSelected(updated)
+      setOwned(prev => prev.map(o =>
+        o.character.id === selected.character.id ? { ...o, level: data.newLevel, xp: data.newXp } : o
+      ))
+      if (data.milestoneGems > 0) {
+        setGems(data.gemsTotal)
+        setUpgradeMsg(`⬆️ Level ${data.newLevel}! 🎯 Milestone: +${data.milestoneGems} 💎 bonus!`)
+      } else {
+        setUpgradeMsg(`⬆️ Now Level ${data.newLevel}! (XP used)`)
+      }
     }
     setUpgrading(false)
   }
@@ -253,6 +286,9 @@ export default function CollectionPage() {
         const count = s.count ?? 1
         const maxLv = maxLevelForStars(stars)
         const lvCost = levelUpCost(level)
+        const xp = s.xp ?? 0
+        const xpNeeded = xpToNextLevel(level)
+        const xpReady = level < maxLv && xp >= xpNeeded
         const canLevel = level < maxLv && gems >= lvCost
         const copiesForStar = starUpCopiesNeeded(stars)
         const minForStar = minCountForStarUp(stars)
@@ -324,26 +360,63 @@ export default function CollectionPage() {
               {/* Level Up */}
               <div className="bg-gray-800 rounded-xl p-3 mb-2">
                 <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="text-white font-bold text-sm">Level Up</p>
-                    <p className="text-gray-500 text-xs">
-                      {level >= maxLv
-                        ? `Max level for ${stars}★ — star up to continue`
-                        : `Lv ${level} → ${level + 1} · costs ${lvCost} 💎`}
-                    </p>
+                  <p className="text-white font-bold text-sm">Level Up</p>
+                  <p className="text-gray-500 text-xs">Lv {level} / {maxLv}</p>
+                </div>
+
+                {/* XP Bar */}
+                <div className="mb-3">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-400">Battle XP</span>
+                    <span className={xpReady ? 'text-yellow-400 font-bold animate-pulse' : 'text-gray-500'}>
+                      {xp} / {level < maxLv ? xpNeeded : '—'}
+                      {xpReady && ' ✦ READY'}
+                    </span>
                   </div>
-                  <button
-                    onClick={levelUp}
-                    disabled={!canLevel || upgrading}
-                    className="bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-lg px-4 py-2 text-sm transition-colors"
-                  >
-                    {upgrading ? '...' : `+1 (${lvCost}💎)`}
-                  </button>
+                  <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-2 rounded-full transition-all duration-500 ${xpReady ? 'bg-yellow-400' : 'bg-emerald-500'}`}
+                      style={{ width: level >= maxLv ? '100%' : `${Math.min((xp / xpNeeded) * 100, 100)}%` }}
+                    />
+                  </div>
                 </div>
-                {/* Level bar */}
-                <div className="w-full bg-gray-700 rounded-full h-1.5">
-                  <div className="bg-violet-500 h-1.5 rounded-full transition-all" style={{ width: `${(level / maxLv) * 100}%` }} />
+
+                {/* Level progress bar */}
+                <div className="mb-3">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-400">Progress</span>
+                    <span className="text-gray-600">{level} / {maxLv}</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-violet-500 h-1.5 rounded-full transition-all" style={{ width: `${(level / maxLv) * 100}%` }} />
+                  </div>
                 </div>
+
+                {/* Buttons */}
+                {level >= maxLv ? (
+                  <p className="text-gray-500 text-xs text-center py-1">
+                    Max level for {stars}★ — star up to continue
+                  </p>
+                ) : (
+                  <div className="flex gap-2">
+                    {xpReady && (
+                      <button
+                        onClick={xpLevelUp}
+                        disabled={upgrading}
+                        className="flex-1 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black rounded-lg px-3 py-2 text-sm transition-colors"
+                      >
+                        {upgrading ? '...' : '⚡ Level Up FREE'}
+                      </button>
+                    )}
+                    <button
+                      onClick={levelUp}
+                      disabled={!canLevel || upgrading}
+                      className={`${xpReady ? '' : 'w-full'} flex-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-lg px-3 py-2 text-sm transition-colors`}
+                    >
+                      {upgrading ? '...' : `Fast (${lvCost}💎)`}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Star Up */}

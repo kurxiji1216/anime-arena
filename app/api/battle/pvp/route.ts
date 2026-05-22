@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle } from '@/lib/game/battle'
-import { calcEffectiveStats } from '@/lib/game/stats'
+import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
 
 const RARITY_ORDER: Record<string, number> = { legendary: 4, epic: 3, rare: 2, common: 1 }
 const WIN_REWARD = 15
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   // Verify the player owns this character and get their upgrade info
   const { data: userChar } = await supabase
     .from('user_characters')
-    .select('level, stars')
+    .select('level, stars, xp')
     .eq('user_id', user.id)
     .eq('character_id', characterId)
     .single()
@@ -82,12 +82,31 @@ export async function POST(request: Request) {
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 500 })
 
   const gemsAwarded = result.winner === 'player' ? WIN_REWARD : 0
+  let xpGained = 0
+  let levelsGained = 0
+  let milestoneGems = 0
+
+  if (result.winner === 'player') {
+    // Award XP to winning character
+    xpGained = BATTLE_XP.pvpWin
+    const maxLevel = maxLevelForStars(userChar.stars ?? 1)
+    const xpResult = applyXP(userChar.level ?? 1, userChar.xp ?? 0, xpGained, maxLevel)
+    levelsGained = xpResult.levelsGained
+    milestoneGems = xpResult.gemsToAward
+
+    await supabase
+      .from('user_characters')
+      .update({ level: xpResult.newLevel, xp: xpResult.newXp })
+      .eq('user_id', user.id)
+      .eq('character_id', characterId)
+  }
+
   await supabase
     .from('profiles')
     .update({
       pvp_wins:    profile.pvp_wins    + (result.winner === 'player' ? 1 : 0),
       pvp_battles: profile.pvp_battles + 1,
-      gems:        profile.gems + gemsAwarded,
+      gems:        profile.gems + gemsAwarded + milestoneGems,
     })
     .eq('user_id', user.id)
 
@@ -96,5 +115,8 @@ export async function POST(request: Request) {
     gemsAwarded,
     opponentName,
     opponentCharacter: oppBase.name,
+    xpGained,
+    levelsGained,
+    milestoneGems,
   })
 }

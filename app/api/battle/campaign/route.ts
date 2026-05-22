@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle } from '@/lib/game/battle'
 import { getStage, isStageUnlocked } from '@/lib/game/campaign'
-import { calcEffectiveStats } from '@/lib/game/stats'
+import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
 
 const REPLAY_REWARD = 5
 
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   // Verify player owns the chosen character + get upgrade info
   const { data: userChar } = await supabase
     .from('user_characters')
-    .select('character_id, level, stars')
+    .select('character_id, level, stars, xp')
     .eq('user_id', user.id)
     .eq('character_id', characterId)
     .single()
@@ -69,6 +69,9 @@ export async function POST(request: Request) {
   // Handle win
   const alreadyCleared = cleared.some(c => c.arc === arc && c.stage === stage)
   let gemsAwarded = 0
+  let xpGained = 0
+  let levelsGained = 0
+  let milestoneGems = 0
 
   if (result.winner === 'player') {
     gemsAwarded = alreadyCleared ? REPLAY_REWARD : stageConfig.reward
@@ -79,6 +82,19 @@ export async function POST(request: Request) {
         .insert({ user_id: user.id, arc, stage })
     }
 
+    // Award XP to the winning character
+    xpGained = alreadyCleared ? BATTLE_XP.campaignReplay : BATTLE_XP.campaignFirst
+    const maxLevel = maxLevelForStars(userChar.stars ?? 1)
+    const xpResult = applyXP(userChar.level ?? 1, userChar.xp ?? 0, xpGained, maxLevel)
+    levelsGained = xpResult.levelsGained
+    milestoneGems = xpResult.gemsToAward
+
+    await supabase
+      .from('user_characters')
+      .update({ level: xpResult.newLevel, xp: xpResult.newXp })
+      .eq('user_id', user.id)
+      .eq('character_id', characterId)
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('gems')
@@ -88,7 +104,7 @@ export async function POST(request: Request) {
     if (profile) {
       await supabase
         .from('profiles')
-        .update({ gems: profile.gems + gemsAwarded })
+        .update({ gems: profile.gems + gemsAwarded + milestoneGems })
         .eq('user_id', user.id)
     }
   }
@@ -97,5 +113,8 @@ export async function POST(request: Request) {
     ...result,
     gemsAwarded,
     isNewClear: !alreadyCleared && result.winner === 'player',
+    xpGained,
+    levelsGained,
+    milestoneGems,
   })
 }

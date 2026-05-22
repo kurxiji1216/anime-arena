@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle, BattleFighter } from '@/lib/game/battle'
-import { calcEffectiveStats } from '@/lib/game/stats'
+import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
 
 const GEMS_PER_FLOOR = 10
 
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   // Verify player owns the chosen character + get upgrade info
   const { data: userChar } = await supabase
     .from('user_characters')
-    .select('character_id, level, stars')
+    .select('character_id, level, stars, xp')
     .eq('user_id', user.id)
     .eq('character_id', characterId)
     .single()
@@ -90,16 +90,32 @@ export async function POST(request: Request) {
   let gemsAwarded = 0
   let newFloor = currentFloor
   let newBest = profile.tower_best_floor ?? 0
+  let xpGained = 0
+  let levelsGained = 0
+  let milestoneGems = 0
 
   if (result.winner === 'player') {
     gemsAwarded = GEMS_PER_FLOOR
     newFloor = currentFloor + 1
     newBest = Math.max(newBest, currentFloor)
 
+    // Award XP to the winning character (scales with floor difficulty)
+    xpGained = BATTLE_XP.tower(currentFloor)
+    const maxLevel = maxLevelForStars(userChar.stars ?? 1)
+    const xpResult = applyXP(userChar.level ?? 1, userChar.xp ?? 0, xpGained, maxLevel)
+    levelsGained = xpResult.levelsGained
+    milestoneGems = xpResult.gemsToAward
+
+    await supabase
+      .from('user_characters')
+      .update({ level: xpResult.newLevel, xp: xpResult.newXp })
+      .eq('user_id', user.id)
+      .eq('character_id', characterId)
+
     await supabase
       .from('profiles')
       .update({
-        gems: profile.gems + gemsAwarded,
+        gems: profile.gems + gemsAwarded + milestoneGems,
         tower_floor: newFloor,
         tower_best_floor: newBest,
       })
@@ -121,5 +137,8 @@ export async function POST(request: Request) {
     bestFloor: newBest,
     enemyName: scaledEnemy.name,
     floorMultiplier: +(1 + (currentFloor - 1) * 0.04).toFixed(2),
+    xpGained,
+    levelsGained,
+    milestoneGems,
   })
 }
