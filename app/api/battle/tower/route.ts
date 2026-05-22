@@ -163,5 +163,6 @@ export async function POST(request: Request) {
     milestoneGems,
     playerXpGained,
     newPlayerRank,
+    enemyImageUrl: baseEnemy.image_url ?? null,
   })
 }
