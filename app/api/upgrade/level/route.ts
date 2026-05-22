@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { levelUpCost, maxLevelForStars } from '@/lib/game/stats'
+import { resolveQuests, markDone } from '@/lib/game/quests'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
   // Check gems
   const { data: profile } = await supabase
     .from('profiles')
-    .select('gems')
+    .select('gems, daily_quests')
     .eq('user_id', user.id)
     .single()
 
@@ -41,9 +42,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Not enough gems. Need ${cost} 💎` }, { status: 400 })
   }
 
-  // Deduct gems and increment level
+  // Deduct gems, increment level, mark quest done
+  const updatedQuests = markDone(resolveQuests(profile.daily_quests), 'level_up')
   const [, levelResult] = await Promise.all([
-    supabase.from('profiles').update({ gems: profile.gems - cost }).eq('user_id', user.id),
+    supabase.from('profiles').update({ gems: profile.gems - cost, daily_quests: updatedQuests }).eq('user_id', user.id),
     supabase.from('user_characters').update({ level: level + 1 }).eq('user_id', user.id).eq('character_id', characterId),
   ])
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveQuests, markDone } from '@/lib/game/quests'
 
 const PULL_COST = 10
 
@@ -21,7 +22,7 @@ export async function POST() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('gems')
+    .select('gems, daily_quests')
     .eq('user_id', user.id)
     .single()
 
@@ -42,9 +43,10 @@ export async function POST() {
 
   const character = characters[Math.floor(Math.random() * characters.length)]
 
+  const updatedQuests = markDone(resolveQuests(profile.daily_quests), 'do_pull')
   await supabase
     .from('profiles')
-    .update({ gems: profile.gems - PULL_COST })
+    .update({ gems: profile.gems - PULL_COST, daily_quests: updatedQuests })
     .eq('user_id', user.id)
 
   const { data: existing } = await supabase

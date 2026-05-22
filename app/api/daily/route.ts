@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveQuests, markDone } from '@/lib/game/quests'
 
 const DAILY_GEMS = 20
 
@@ -13,7 +14,7 @@ export async function POST() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('gems, last_daily_claim_at')
+    .select('gems, last_daily_claim_at, daily_quests')
     .eq('user_id', user.id)
     .single()
 
@@ -34,10 +35,11 @@ export async function POST() {
   }
 
   const newGems = profile.gems + DAILY_GEMS
+  const updatedQuests = markDone(resolveQuests(profile.daily_quests), 'claim_daily')
 
   await supabase
     .from('profiles')
-    .update({ gems: newGems, last_daily_claim_at: now.toISOString() })
+    .update({ gems: newGems, last_daily_claim_at: now.toISOString(), daily_quests: updatedQuests })
     .eq('user_id', user.id)
 
   return NextResponse.json({ gemsAwarded: DAILY_GEMS, gemsTotal: newGems })
