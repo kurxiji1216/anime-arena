@@ -16,6 +16,7 @@ type OwnedCharacter = {
     name: string
     source_anime: string
     rarity: 'common' | 'rare' | 'epic' | 'legendary'
+    image_url: string | null
     base_hp: number
     base_atk: number
     base_def: number
@@ -24,10 +25,10 @@ type OwnedCharacter = {
 }
 
 const RARITY_STYLES = {
-  common:    { border: 'border-gray-700',   badge: 'bg-gray-800 text-gray-400',     label: 'Common',    order: 0 },
-  rare:      { border: 'border-blue-600',   badge: 'bg-blue-950 text-blue-400',     label: 'Rare',      order: 1 },
-  epic:      { border: 'border-violet-600', badge: 'bg-violet-950 text-violet-400', label: 'Epic',      order: 2 },
-  legendary: { border: 'border-yellow-500', badge: 'bg-yellow-950 text-yellow-400', label: 'Legendary', order: 3 },
+  common:    { border: 'border-gray-700',   badge: 'bg-gray-800 text-gray-400',     label: 'Common',    glow: '',                shimmer: '' },
+  rare:      { border: 'border-blue-500',   badge: 'bg-blue-950 text-blue-300',     label: 'Rare',      glow: 'glow-rare',       shimmer: 'card-shimmer' },
+  epic:      { border: 'border-violet-500', badge: 'bg-violet-950 text-violet-300', label: 'Epic',      glow: 'glow-epic',       shimmer: 'card-shimmer' },
+  legendary: { border: 'border-yellow-400', badge: 'bg-yellow-950 text-yellow-300', label: 'Legendary', glow: 'glow-legendary',  shimmer: 'card-shimmer-legendary' },
 }
 
 const RARITY_ORDER = { legendary: 0, epic: 1, rare: 2, common: 3 }
@@ -64,7 +65,7 @@ export default function CollectionPage() {
     const [cardsRes, profileRes] = await Promise.all([
       supabase
         .from('user_characters')
-        .select('count, level, stars, character:characters(id, name, source_anime, rarity, base_hp, base_atk, base_def, base_speed)')
+        .select('count, level, stars, character:characters(id, name, source_anime, rarity, image_url, base_hp, base_atk, base_def, base_speed)')
         .eq('user_id', user.id),
       supabase.from('profiles').select('gems').eq('user_id', user.id).single(),
     ])
@@ -209,11 +210,23 @@ export default function CollectionPage() {
               <button
                 key={o.character.id}
                 onClick={() => { setSelected(o); setUpgradeMsg('') }}
-                className={`bg-gray-900 border-2 ${style.border} rounded-xl p-3 text-left hover:brightness-110 transition-all`}
+                className={`relative overflow-hidden bg-gray-900 border-2 ${style.border} ${style.glow} ${style.shimmer} rounded-xl p-3 text-left hover:scale-[1.03] hover:brightness-110 transition-all duration-200`}
               >
-                <div className={`w-full h-20 rounded-lg border ${style.border} bg-gray-800 flex items-center justify-center mb-2`}>
-                  <span className="text-3xl">🎴</span>
+                {/* Portrait */}
+                <div className="w-full h-28 rounded-lg overflow-hidden mb-2 bg-gray-800">
+                  {o.character.image_url ? (
+                    <img
+                      src={o.character.image_url}
+                      alt={o.character.name}
+                      className="w-full h-full object-cover object-top"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-4xl opacity-30">👤</span>
+                    </div>
+                  )}
                 </div>
+
                 <div className="flex items-center justify-between mb-0.5">
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${style.badge}`}>{style.label}</span>
                   <StarDisplay stars={o.stars ?? 1} />
@@ -261,9 +274,19 @@ export default function CollectionPage() {
                 <button onClick={() => setSelected(null)} className="text-gray-500 hover:text-white text-xl leading-none">×</button>
               </div>
 
-              {/* Art placeholder */}
-              <div className={`w-full h-32 rounded-xl border ${style.border} bg-gray-800 flex items-center justify-center mb-4`}>
-                <span className="text-5xl">🎴</span>
+              {/* Portrait */}
+              <div className={`relative w-full h-44 rounded-xl overflow-hidden border-2 ${style.border} ${style.glow} ${style.shimmer} mb-4`}>
+                {s.character.image_url ? (
+                  <img
+                    src={s.character.image_url}
+                    alt={s.character.name}
+                    className="w-full h-full object-cover object-top"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                    <span className="text-6xl opacity-20">👤</span>
+                  </div>
+                )}
               </div>
 
               {/* Name + stars */}

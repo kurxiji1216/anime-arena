@@ -24,3 +24,120 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ─── Card shimmer sweep ─────────────────────────────────── */
+@keyframes shimmer-sweep {
+  0%   { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(300%)  skewX(-12deg); }
+}
+
+.card-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.06) 40%,
+    rgba(255,255,255,0.18) 50%,
+    rgba(255,255,255,0.06) 60%,
+    transparent 100%
+  );
+  animation: shimmer-sweep 3s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Legendary gets a more intense golden shimmer */
+.card-shimmer-legendary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(250,204,21,0.04) 35%,
+    rgba(250,204,21,0.22) 50%,
+    rgba(250,204,21,0.04) 65%,
+    transparent 100%
+  );
+  animation: shimmer-sweep 2.4s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* ─── Rarity glow pulses ─────────────────────────────────── */
+@keyframes glow-rare {
+  0%, 100% { box-shadow: 0 0 8px 1px rgba(59,130,246,0.35), 0 0 0 1px rgba(59,130,246,0.2); }
+  50%       { box-shadow: 0 0 16px 3px rgba(59,130,246,0.55), 0 0 0 1px rgba(59,130,246,0.3); }
+}
+
+@keyframes glow-epic {
+  0%, 100% { box-shadow: 0 0 8px 1px rgba(139,92,246,0.4), 0 0 0 1px rgba(139,92,246,0.25); }
+  50%       { box-shadow: 0 0 20px 4px rgba(139,92,246,0.65), 0 0 0 1px rgba(139,92,246,0.35); }
+}
+
+@keyframes glow-legendary {
+  0%, 100% { box-shadow: 0 0 12px 2px rgba(234,179,8,0.45), 0 0 0 1px rgba(234,179,8,0.3); }
+  50%       { box-shadow: 0 0 28px 6px rgba(234,179,8,0.75), 0 0 0 1px rgba(234,179,8,0.45); }
+}
+
+.glow-rare      { animation: glow-rare      2.8s ease-in-out infinite; }
+.glow-epic      { animation: glow-epic      2.4s ease-in-out infinite; }
+.glow-legendary { animation: glow-legendary 2.0s ease-in-out infinite; }
+
+/* ─── Pull card 3D flip ──────────────────────────────────── */
+.flip-container {
+  perspective: 1000px;
+}
+
+.flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+.flip-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-face-front {
+  transform: rotateY(180deg);
+}
+
+/* Card floats gently while waiting to be tapped */
+@keyframes card-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+.card-waiting {
+  animation: card-float 2.2s ease-in-out infinite;
+}
+
+/* "Tap to reveal" text pulses */
+@keyframes tap-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 1; }
+}
+.tap-hint {
+  animation: tap-pulse 1.3s ease-in-out infinite;
+}
+
+/* Character details slide up after flip completes */
+@keyframes details-reveal {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.details-in {
+  animation: details-reveal 0.4s ease-out forwards;
+  opacity: 0;
+}

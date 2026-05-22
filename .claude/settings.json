@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd $CWD && pnpm typecheck 2>&1 | tail -20"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "case \"$TOOL_INPUT_COMMAND\" in *'supabase db reset'*|*'git push --force'*|*'DROP TABLE'*|*'truncate'*) echo '{\"decision\":\"block\",\"reason\":\"Destructive command blocked — run manually if intentional\"}'; exit 0;; esac"
+          }
+        ]
+      }
+    ]
+  }
+}

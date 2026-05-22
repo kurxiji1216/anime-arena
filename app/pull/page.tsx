@@ -10,6 +10,7 @@ type Character = {
   name: string
   source_anime: string
   rarity: 'common' | 'rare' | 'epic' | 'legendary'
+  image_url: string | null
   base_hp: number
   base_atk: number
   base_def: number
@@ -24,10 +25,10 @@ type PullResult = {
 }
 
 const RARITY_STYLES = {
-  common:    { border: 'border-gray-600',   glow: '',                          badge: 'bg-gray-700 text-gray-300',       label: 'Common' },
-  rare:      { border: 'border-blue-500',   glow: 'shadow-blue-500/30',        badge: 'bg-blue-900 text-blue-300',       label: 'Rare' },
-  epic:      { border: 'border-violet-500', glow: 'shadow-violet-500/40',      badge: 'bg-violet-900 text-violet-300',   label: 'Epic' },
-  legendary: { border: 'border-yellow-400', glow: 'shadow-yellow-400/50',      badge: 'bg-yellow-900 text-yellow-300',   label: 'Legendary ✨' },
+  common:    { border: 'border-gray-600',   glow: '',               shimmer: '',                       badge: 'bg-gray-700 text-gray-300',     label: 'Common' },
+  rare:      { border: 'border-blue-500',   glow: 'glow-rare',      shimmer: 'card-shimmer',           badge: 'bg-blue-900 text-blue-300',     label: 'Rare' },
+  epic:      { border: 'border-violet-500', glow: 'glow-epic',      shimmer: 'card-shimmer',           badge: 'bg-violet-900 text-violet-300', label: 'Epic' },
+  legendary: { border: 'border-yellow-400', glow: 'glow-legendary', shimmer: 'card-shimmer-legendary', badge: 'bg-yellow-900 text-yellow-300', label: 'Legendary ✨' },
 }
 
 export default function PullPage() {
@@ -36,6 +37,7 @@ export default function PullPage() {
   const [result, setResult] = useState<PullResult | null>(null)
   const [error, setError] = useState('')
   const [revealed, setRevealed] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -43,13 +45,7 @@ export default function PullPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-
-      const { data } = await supabase
-        .from('profiles')
-        .select('gems')
-        .eq('user_id', user.id)
-        .single()
-
+      const { data } = await supabase.from('profiles').select('gems').eq('user_id', user.id).single()
       if (data) setGems(data.gems)
     }
     load()
@@ -57,13 +53,13 @@ export default function PullPage() {
 
   async function doPull() {
     if (gems !== null && gems < 10) {
-      setError('Not enough gems! Claim your daily bonus or come back tomorrow.')
+      setError('Not enough gems!')
       return
     }
-
     setPulling(true)
     setResult(null)
     setRevealed(false)
+    setShowDetails(false)
     setError('')
 
     const res = await fetch('/api/pull', { method: 'POST' })
@@ -78,9 +74,14 @@ export default function PullPage() {
     setResult(data)
     setGems(data.gemsRemaining)
     setPulling(false)
+    // User must tap the card — no auto-reveal
+  }
 
-    // Small delay then reveal for dramatic effect
-    setTimeout(() => setRevealed(true), 100)
+  function handleReveal() {
+    if (revealed) return
+    setRevealed(true)
+    // Wait for flip animation (650ms) then show details
+    setTimeout(() => setShowDetails(true), 650)
   }
 
   const style = result ? RARITY_STYLES[result.character.rarity] : null
@@ -104,71 +105,129 @@ export default function PullPage() {
           <p className="text-gray-500">10 gems per pull · 2% legendary chance</p>
         </div>
 
-        {/* Result Card */}
+        {/* ── Card reveal area ── */}
         {result && style && (
-          <div className={`transition-all duration-500 ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            <div className={`bg-gray-900 rounded-2xl border-2 ${style.border} ${style.glow ? `shadow-xl ${style.glow}` : ''} p-6 mb-6`}>
+          <div className="flex flex-col items-center">
 
-              {/* Rarity + New badge */}
-              <div className="flex items-center justify-between mb-4">
-                <span className={`text-xs font-bold px-3 py-1 rounded-full ${style.badge}`}>
-                  {style.label}
-                </span>
-                {result.isNew ? (
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-900 text-green-300">NEW!</span>
-                ) : (
-                  <span className="text-xs text-gray-500">Duplicate #{result.totalCount}</span>
-                )}
-              </div>
+            {/* Floating wrapper — stops floating once revealed */}
+            <div className={!revealed ? 'card-waiting' : ''}>
+              <div
+                className="flip-container w-[220px] h-[320px] cursor-pointer"
+                onClick={handleReveal}
+              >
+                <div className={`flip-inner w-full h-full ${revealed ? 'is-flipped' : ''}`}>
 
-              {/* Character placeholder art */}
-              <div className={`w-full h-40 rounded-xl border ${style.border} bg-gray-800 flex items-center justify-center mb-4`}>
-                <div className="text-center">
-                  <div className="text-5xl mb-2">🎴</div>
-                  <p className="text-gray-500 text-xs">Art coming soon</p>
+                  {/* ── BACK FACE ── */}
+                  <div className="flip-face rounded-2xl border-2 border-gray-700 overflow-hidden bg-gray-900">
+                    <div className="w-full h-full flex flex-col items-center justify-center relative">
+                      {/* Diagonal grid pattern */}
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          backgroundImage: [
+                            'repeating-linear-gradient(45deg,  rgba(255,255,255,0.04) 0, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 14px)',
+                            'repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 14px)',
+                          ].join(', '),
+                        }}
+                      />
+                      <span className="text-5xl mb-3 relative z-10 drop-shadow-lg">⚔️</span>
+                      <p className="text-gray-600 text-[10px] font-black tracking-[0.2em] uppercase relative z-10">
+                        Anime Arena
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* ── FRONT FACE ── */}
+                  <div className={`flip-face flip-face-front rounded-2xl border-2 ${style.border} ${style.glow} ${style.shimmer} overflow-hidden relative`}>
+                    {/* Portrait */}
+                    {result.character.image_url ? (
+                      <img
+                        src={result.character.image_url}
+                        alt={result.character.name}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                        <span className="text-6xl opacity-20">👤</span>
+                      </div>
+                    )}
+
+                    {/* Bottom name gradient */}
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/95 via-black/60 to-transparent flex flex-col justify-end p-3">
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full self-start mb-1.5 ${style.badge}`}>
+                        {style.label}
+                      </span>
+                      <p className="text-white font-black text-sm leading-tight drop-shadow">
+                        {result.character.name}
+                      </p>
+                    </div>
+
+                    {/* NEW / Duplicate badge */}
+                    <div className="absolute top-2.5 right-2.5">
+                      {result.isNew ? (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-green-500 text-white shadow-lg">
+                          NEW!
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/70 text-gray-300">
+                          ×{result.totalCount}
+                        </span>
+                      )}
+                    </div>
+
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Name & source */}
-              <h2 className="text-2xl font-black text-white mb-0.5">{result.character.name}</h2>
-              <p className="text-gray-400 text-sm mb-5">{result.character.source_anime}</p>
+            {/* Tap prompt */}
+            {!revealed && (
+              <p className="tap-hint text-gray-400 text-sm font-semibold mt-5">
+                👆 Tap card to reveal
+              </p>
+            )}
 
-              {/* Stats */}
-              <div className="grid grid-cols-4 gap-2">
-                {[
-                  { label: 'HP', value: result.character.base_hp, color: 'text-red-400' },
-                  { label: 'ATK', value: result.character.base_atk, color: 'text-orange-400' },
-                  { label: 'DEF', value: result.character.base_def, color: 'text-blue-400' },
-                  { label: 'SPD', value: result.character.base_speed, color: 'text-green-400' },
-                ].map(stat => (
-                  <div key={stat.label} className="bg-gray-800 rounded-xl p-2.5 text-center">
-                    <p className="text-gray-500 text-xs mb-1">{stat.label}</p>
-                    <p className={`font-black text-lg ${stat.color}`}>{stat.value}</p>
-                  </div>
-                ))}
+            {/* Character details — slide up after flip lands */}
+            {showDetails && (
+              <div className="details-in w-full max-w-xs mt-6">
+                <p className="text-center text-gray-400 text-sm mb-4">{result.character.source_anime}</p>
+
+                <div className="grid grid-cols-4 gap-2 mb-6">
+                  {[
+                    { label: 'HP',  value: result.character.base_hp,    color: 'text-red-400' },
+                    { label: 'ATK', value: result.character.base_atk,   color: 'text-orange-400' },
+                    { label: 'DEF', value: result.character.base_def,   color: 'text-blue-400' },
+                    { label: 'SPD', value: result.character.base_speed, color: 'text-green-400' },
+                  ].map(stat => (
+                    <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-2.5 text-center">
+                      <p className="text-gray-500 text-xs mb-1">{stat.label}</p>
+                      <p className={`font-black text-lg ${stat.color}`}>{stat.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={doPull}
+                    disabled={pulling || (gems !== null && gems < 10)}
+                    className="flex-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black rounded-xl py-3 transition-colors"
+                  >
+                    Pull Again (10 💎)
+                  </button>
+                  <Link
+                    href="/collection"
+                    className="flex-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-white font-bold rounded-xl py-3 text-center transition-colors"
+                  >
+                    Collection →
+                  </Link>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Post-pull actions */}
-            <div className="flex gap-3">
-              <button
-                onClick={doPull}
-                disabled={pulling || (gems !== null && gems < 10)}
-                className="flex-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black rounded-xl py-3 transition-colors"
-              >
-                Pull Again (10 💎)
-              </button>
-              <Link
-                href="/collection"
-                className="flex-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-white font-bold rounded-xl py-3 text-center transition-colors"
-              >
-                Collection →
-              </Link>
-            </div>
           </div>
         )}
 
-        {/* Pull button (shown when no result yet) */}
+        {/* Pull button — shown when no result yet */}
         {!result && (
           <div className="text-center">
             <button
