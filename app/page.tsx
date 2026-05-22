@@ -159,6 +159,27 @@ export default function HomePage() {
             </Link>
           </div>
 
+          {/* PvP + Leaderboard */}
+          <div className="grid grid-cols-2 gap-4">
+            <Link
+              href="/pvp"
+              className="bg-gradient-to-br from-violet-900 to-violet-800 hover:from-violet-800 hover:to-violet-700 border border-violet-700 rounded-2xl p-6 text-center transition-colors block"
+            >
+              <div className="text-4xl mb-3">🥊</div>
+              <p className="font-black text-white text-lg">PvP</p>
+              <p className="text-violet-300 text-sm mt-1">Fight players · +15 💎</p>
+            </Link>
+
+            <Link
+              href="/leaderboard"
+              className="bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-2xl p-6 text-center transition-colors block"
+            >
+              <div className="text-4xl mb-3">🏆</div>
+              <p className="font-black text-white text-lg">Leaderboard</p>
+              <p className="text-gray-500 text-sm mt-1">Top players</p>
+            </Link>
+          </div>
+
         </div>
 
       </div>
