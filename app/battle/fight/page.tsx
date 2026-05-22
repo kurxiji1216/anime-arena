@@ -31,6 +31,8 @@ type OwnedCharacter = {
 type FullResult = BattleResult & {
   gemsAwarded: number
   isNewClear?: boolean
+  isArcComplete?: boolean
+  completionBonus?: number
   newFloor?: number
   bestFloor?: number
   floorCleared?: number
@@ -594,6 +596,9 @@ function FightContent() {
                     )}
                     {result.isNewClear && (
                       <span className="text-green-300">⭐ First clear!</span>
+                    )}
+                    {result.isArcComplete && (result.completionBonus ?? 0) > 0 && (
+                      <span className="text-yellow-300">🏆 Arc Clear! +{result.completionBonus} 💎</span>
                     )}
                     {(result.milestoneGems ?? 0) > 0 && (
                       <span className="text-yellow-300">🎯 Milestone +{result.milestoneGems} 💎</span>

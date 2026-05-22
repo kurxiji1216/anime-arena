@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle } from '@/lib/game/battle'
-import { getStage, isStageUnlocked } from '@/lib/game/campaign'
+import { getStage, isStageUnlocked, stageEnemyMultiplier, stageGemReward, arcCompleteBonus } from '@/lib/game/campaign'
 import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
 import { applyPlayerXP, playerStatBonus, PLAYER_XP_REWARDS } from '@/lib/game/player'
 
@@ -78,8 +78,18 @@ export async function POST(request: Request) {
 
   if (!enemyChar) return NextResponse.json({ error: `Enemy "${stageConfig.enemyName}" not found in database` }, { status: 500 })
 
+  // Scale enemy stats by arc difficulty + stage position
+  const enemyMult = stageEnemyMultiplier(arc, stage)
+  const scaledEnemy = {
+    ...enemyChar,
+    base_hp:    Math.round(enemyChar.base_hp    * enemyMult),
+    base_atk:   Math.round(enemyChar.base_atk   * enemyMult),
+    base_def:   Math.round(enemyChar.base_def   * enemyMult),
+    base_speed: Math.round(enemyChar.base_speed * enemyMult),
+  }
+
   // Run the battle
-  const result = runBattle(playerChar, enemyChar)
+  const result = runBattle(playerChar, scaledEnemy)
 
   // Handle win
   const alreadyCleared = cleared.some(c => c.arc === arc && c.stage === stage)
@@ -89,14 +99,22 @@ export async function POST(request: Request) {
   let milestoneGems = 0
   let playerXpGained = 0
   let newPlayerRank: string | null = null
+  let completionBonus = 0
+  let isArcComplete = false
 
   if (result.winner === 'player') {
-    gemsAwarded = alreadyCleared ? REPLAY_REWARD : stageConfig.reward
+    gemsAwarded = alreadyCleared ? REPLAY_REWARD : stageGemReward(arc, stage)
 
     if (!alreadyCleared) {
       await supabase
         .from('campaign_progress')
         .insert({ user_id: user.id, arc, stage })
+
+      // Check if this clears the last needed stage for the arc
+      isArcComplete = [1, 2, 3, 4, 5].every(
+        s => s === stage || cleared.some(c => c.arc === arc && c.stage === s)
+      )
+      if (isArcComplete) completionBonus = arcCompleteBonus(arc)
     }
 
     // Award card XP to the winning character
@@ -124,7 +142,7 @@ export async function POST(request: Request) {
     await supabase
       .from('profiles')
       .update({
-        gems: (profile?.gems ?? 0) + gemsAwarded + milestoneGems + playerXpResult.gemsToAward,
+        gems: (profile?.gems ?? 0) + gemsAwarded + milestoneGems + playerXpResult.gemsToAward + completionBonus,
         player_level: playerXpResult.newLevel,
         player_xp:    playerXpResult.newXp,
       })
@@ -134,12 +152,14 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ...result,
     gemsAwarded,
-    isNewClear: !alreadyCleared && result.winner === 'player',
+    isNewClear:      !alreadyCleared && result.winner === 'player',
+    isArcComplete,
+    completionBonus,
     xpGained,
     levelsGained,
     milestoneGems,
     playerXpGained,
     newPlayerRank,
-    enemyImageUrl: enemyChar.image_url ?? null,
+    enemyImageUrl:   enemyChar.image_url ?? null,
   })
 }
