@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle } from '@/lib/game/battle'
+import { getAbility } from '@/lib/game/abilities'
 import { getStage, isStageUnlocked, stageEnemyMultiplier, stageGemReward, arcCompleteBonus } from '@/lib/game/campaign'
 import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
 import { applyPlayerXP, playerStatBonus, PLAYER_XP_REWARDS } from '@/lib/game/player'
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
     base_atk:   Math.round(eff.atk   * pBonus),
     base_def:   Math.round(eff.def   * pBonus),
     base_speed: Math.round(eff.speed * pBonus),
+    ability:    getAbility(playerBase.name),
   }
 
   // Fetch enemy character by name from campaign config
@@ -86,6 +88,7 @@ export async function POST(request: Request) {
     base_atk:   Math.round(enemyChar.base_atk   * enemyMult),
     base_def:   Math.round(enemyChar.base_def   * enemyMult),
     base_speed: Math.round(enemyChar.base_speed * enemyMult),
+    ability:    getAbility(enemyChar.name),
   }
 
   // Run the battle

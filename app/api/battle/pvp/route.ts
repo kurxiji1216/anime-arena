@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle } from '@/lib/game/battle'
+import { getAbility } from '@/lib/game/abilities'
 import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
 import { applyPlayerXP, PLAYER_XP_REWARDS } from '@/lib/game/player'
 
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
 
   // Apply level + star upgrades
   const eff = calcEffectiveStats(playerBase, userChar.level ?? 1, userChar.stars ?? 1)
-  const playerChar = { ...playerBase, base_hp: eff.hp, base_atk: eff.atk, base_def: eff.def, base_speed: eff.speed }
+  const playerChar = { ...playerBase, base_hp: eff.hp, base_atk: eff.atk, base_def: eff.def, base_speed: eff.speed, ability: getAbility(playerBase.name) }
 
   // Find a random opponent — any other user who owns at least one character
   const { data: opponentRows } = await supabase
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
 
   const oppBase = best.character as any
   const oppEff = calcEffectiveStats(oppBase, best.level ?? 1, best.stars ?? 1)
-  const enemyChar = { ...oppBase, base_hp: oppEff.hp, base_atk: oppEff.atk, base_def: oppEff.def, base_speed: oppEff.speed }
+  const enemyChar = { ...oppBase, base_hp: oppEff.hp, base_atk: oppEff.atk, base_def: oppEff.def, base_speed: oppEff.speed, ability: getAbility(oppBase.name) }
 
   // Get the opponent's username for display
   const { data: oppProfile } = await supabase

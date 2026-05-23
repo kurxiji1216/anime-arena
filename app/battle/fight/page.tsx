@@ -8,6 +8,7 @@ import { getArc, getStage } from '@/lib/game/campaign'
 import { calcEffectiveStats, xpToNextLevel } from '@/lib/game/stats'
 import { getHunterRank, playerXpToLevel } from '@/lib/game/player'
 import type { BattleResult } from '@/lib/game/battle'
+import { AbilityBadge } from '@/components/AbilityBadge'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -349,6 +350,12 @@ function FightContent() {
                 ? <p className="font-game font-black text-2xl text-pink-300 relative z-10">A Random Hunter</p>
                 : <p className="font-game font-black text-2xl text-orange-300 relative z-10">??? Unknown Enemy</p>
               }
+              {/* Enemy ability — only revealed in campaign where the opponent is known */}
+              {mode === 'campaign' && stage && (
+                <div className="mt-2 relative z-10">
+                  <AbilityBadge characterName={stage.enemyName} variant="compact" />
+                </div>
+              )}
               {mode === 'tower' && (
                 <p className="font-game text-gray-600 text-xs mt-1 relative z-10">+4% stronger per floor · Floor {towerFloor}</p>
               )}
@@ -385,7 +392,7 @@ function FightContent() {
                         }`}
                         style={{ background: isSelected ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)' }}
                       >
-                        <div className="w-full h-20 overflow-hidden bg-gray-900">
+                        <div className="relative w-full h-20 overflow-hidden bg-gray-900">
                           {o.character.image_url ? (
                             <img src={o.character.image_url} alt={o.character.name} className="w-full h-full object-cover object-top" />
                           ) : (
@@ -393,6 +400,10 @@ function FightContent() {
                               <span className="text-3xl opacity-25">👤</span>
                             </div>
                           )}
+                          {/* Ability icon overlay */}
+                          <div className="absolute top-1 left-1">
+                            <AbilityBadge characterName={o.character.name} variant="icon" />
+                          </div>
                         </div>
                         <div className="p-2">
                           <p className="text-white text-xs font-bold leading-tight truncate">{o.character.name}</p>
@@ -431,7 +442,7 @@ function FightContent() {
                           </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-4 gap-1.5">
+                      <div className="grid grid-cols-4 gap-1.5 mb-2.5">
                         {[
                           { label: 'HP',  value: eff.hp,    color: '#f87171' },
                           { label: 'ATK', value: eff.atk,   color: '#fb923c' },
@@ -444,6 +455,7 @@ function FightContent() {
                           </div>
                         ))}
                       </div>
+                      <AbilityBadge characterName={selected.character.name} variant="full" />
                     </div>
                   )
                 })()}

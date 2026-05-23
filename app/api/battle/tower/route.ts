@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle, BattleFighter } from '@/lib/game/battle'
+import { getAbility } from '@/lib/game/abilities'
 import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
 import { applyPlayerXP, playerStatBonus, PLAYER_XP_REWARDS } from '@/lib/game/player'
 
@@ -26,6 +27,7 @@ function scaleEnemy(char: BattleFighter, floor: number): BattleFighter {
     base_atk:   Math.round(char.base_atk   * multiplier),
     base_def:   Math.round(char.base_def   * multiplier),
     base_speed: Math.round(char.base_speed * multiplier),
+    ability:    getAbility(char.name),
   }
 }
 
@@ -76,6 +78,7 @@ export async function POST(request: Request) {
     base_atk:   Math.round(eff.atk   * pBonus),
     base_def:   Math.round(eff.def   * pBonus),
     base_speed: Math.round(eff.speed * pBonus),
+    ability:    getAbility(playerBase.name),
   }
 
   // Pick a random enemy from the appropriate rarity pool

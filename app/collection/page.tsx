@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { calcEffectiveStats, levelUpCost, maxLevelForStars, minCountForStarUp, starUpCopiesNeeded, xpToNextLevel } from '@/lib/game/stats'
+import { AbilityBadge } from '@/components/AbilityBadge'
 
 type OwnedCharacter = {
   id: string        // user_characters row id (not used directly)
@@ -331,9 +332,14 @@ export default function CollectionPage() {
                 <StarDisplay stars={stars} />
               </div>
               <p className="text-gray-400 text-sm mb-1">{s.character.source_anime}</p>
-              <p className="text-gray-600 text-xs mb-4">
+              <p className="text-gray-600 text-xs mb-3">
                 Level {level}/{maxLv} · {count} {count === 1 ? 'copy' : 'copies'}
               </p>
+
+              {/* Signature ability */}
+              <div className="mb-4">
+                <AbilityBadge characterName={s.character.name} variant="full" />
+              </div>
 
               {/* Effective stats */}
               <div className="grid grid-cols-4 gap-2 mb-5">
