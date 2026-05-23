@@ -54,7 +54,7 @@ export async function POST(request: Request) {
   // Fetch profile early — needed for player rank bonus before battle
   const { data: profile } = await supabase
     .from('profiles')
-    .select('gems, player_level, player_xp')
+    .select('gems, player_level, player_xp, total_wins')
     .eq('user_id', user.id)
     .single()
 
@@ -142,9 +142,10 @@ export async function POST(request: Request) {
     await supabase
       .from('profiles')
       .update({
-        gems: (profile?.gems ?? 0) + gemsAwarded + milestoneGems + playerXpResult.gemsToAward + completionBonus,
+        gems:        (profile?.gems ?? 0) + gemsAwarded + milestoneGems + playerXpResult.gemsToAward + completionBonus,
         player_level: playerXpResult.newLevel,
         player_xp:    playerXpResult.newXp,
+        total_wins:  (profile?.total_wins ?? 0) + 1,
       })
       .eq('user_id', user.id)
   }

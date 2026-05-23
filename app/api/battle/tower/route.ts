@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   // Get player profile (floor + gems)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('gems, tower_floor, tower_best_floor, player_level, player_xp')
+    .select('gems, tower_floor, tower_best_floor, player_level, player_xp, total_wins')
     .eq('user_id', user.id)
     .single()
 
@@ -139,6 +139,7 @@ export async function POST(request: Request) {
         tower_best_floor: newBest,
         player_level:     playerXpResult.newLevel,
         player_xp:        playerXpResult.newXp,
+        total_wins:       (profile.total_wins ?? 0) + 1,
       })
       .eq('user_id', user.id)
   } else {

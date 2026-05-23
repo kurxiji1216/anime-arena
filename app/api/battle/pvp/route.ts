@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   // Update player's PvP record
   const { data: profile } = await supabase
     .from('profiles')
-    .select('gems, pvp_wins, pvp_battles, player_level, player_xp')
+    .select('gems, pvp_wins, pvp_battles, player_level, player_xp, total_wins')
     .eq('user_id', user.id)
     .single()
 
@@ -120,6 +120,7 @@ export async function POST(request: Request) {
         gems:         profile.gems + gemsAwarded + milestoneGems + playerXpResult.gemsToAward,
         player_level: playerXpResult.newLevel,
         player_xp:    playerXpResult.newXp,
+        total_wins:   (profile.total_wins ?? 0) + 1,
       })
       .eq('user_id', user.id)
   } else {

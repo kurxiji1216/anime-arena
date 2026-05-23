@@ -56,10 +56,23 @@ const RARITY_LABEL_COLOR = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+type PullHistoryEntry = {
+  name: string
+  rarity: 'common' | 'rare' | 'epic' | 'legendary'
+  imageUrl: string | null
+  isNew: boolean
+  pulledAt: string
+}
+
+const HARD_PITY = 90
+
 export default function PullPage() {
   const [gems,        setGems]        = useState<number | null>(null)
   const [pulling,     setPulling]     = useState(false)
   const [error,       setError]       = useState('')
+  const [pity,        setPity]        = useState(0)
+  const [history,     setHistory]     = useState<PullHistoryEntry[]>([])
+  const [showHistory, setShowHistory] = useState(false)
 
   // Single pull state
   const [single,      setSingle]      = useState<SingleResult | null>(null)
@@ -79,8 +92,12 @@ export default function PullPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('profiles').select('gems').eq('user_id', user.id).single()
-      if (data) setGems(data.gems)
+      const { data } = await supabase.from('profiles').select('gems, pity_counter, pull_history').eq('user_id', user.id).single()
+      if (data) {
+        setGems(data.gems)
+        setPity(data.pity_counter ?? 0)
+        setHistory(Array.isArray(data.pull_history) ? data.pull_history : [])
+      }
     }
     load()
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
@@ -121,6 +138,13 @@ export default function PullPage() {
 
     setSingle(data)
     setGems(data.gemsRemaining)
+    if (typeof data.pityCounter === 'number') setPity(data.pityCounter)
+    // Prepend to local history
+    setHistory(prev => [{
+      name: data.character.name, rarity: data.character.rarity,
+      imageUrl: data.character.image_url ?? null, isNew: data.isNew,
+      pulledAt: new Date().toISOString(),
+    }, ...prev].slice(0, 20))
     setPulling(false)
   }
 
@@ -148,6 +172,14 @@ export default function PullPage() {
     }
     setMulti(sorted)
     setGems(data.gemsRemaining)
+    if (typeof data.pityCounter === 'number') setPity(data.pityCounter)
+    // Prepend all 10 to local history
+    const entries: PullHistoryEntry[] = data.pulls.map((p: MultiPullEntry) => ({
+      name: p.character.name, rarity: p.character.rarity,
+      imageUrl: p.character.image_url ?? null, isNew: p.isNew,
+      pulledAt: new Date().toISOString(),
+    }))
+    setHistory(prev => [...entries, ...prev].slice(0, 20))
     setPulling(false)
   }
 
@@ -439,6 +471,75 @@ export default function PullPage() {
                 Not enough gems.{' '}
                 <Link href="/" className="text-yellow-400 hover:text-yellow-300 transition-colors">Claim daily bonus →</Link>
               </p>
+            )}
+
+            {/* ── Pity counter ── */}
+            <div className="w-full rounded-xl p-3 mt-3" style={{
+              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+            }}>
+              <div className="flex justify-between font-game text-[10px] mb-1.5">
+                <span className="text-gray-500 tracking-widest">LEGENDARY PITY</span>
+                <span className={pity >= 80 ? 'text-yellow-400 font-bold' : 'text-gray-500'}>
+                  {pity} / {HARD_PITY}
+                </span>
+              </div>
+              <div className="w-full rounded-full h-1.5" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                <div
+                  className="h-1.5 rounded-full transition-all"
+                  style={{
+                    width: `${Math.min((pity / HARD_PITY) * 100, 100)}%`,
+                    background: pity >= 80
+                      ? 'linear-gradient(90deg, #fbbf24, #facc15)'
+                      : pity >= 50
+                      ? 'linear-gradient(90deg, #8b5cf6, #a78bfa)'
+                      : 'linear-gradient(90deg, #4b5563, #6b7280)',
+                  }}
+                />
+              </div>
+              <p className="font-game text-gray-700 text-[10px] mt-1.5 text-center">
+                {pity >= HARD_PITY
+                  ? '🌟 Next pull is a guaranteed Legendary!'
+                  : `Guaranteed Legendary in ${HARD_PITY - pity} more single pulls`}
+              </p>
+            </div>
+
+            {/* ── Recent pulls toggle ── */}
+            {history.length > 0 && (
+              <button
+                onClick={() => setShowHistory(s => !s)}
+                className="font-game text-xs text-gray-600 hover:text-gray-400 mt-2 transition-colors"
+              >
+                {showHistory ? '↑ Hide' : '↓ Show'} recent pulls ({history.length})
+              </button>
+            )}
+
+            {showHistory && history.length > 0 && (
+              <div className="w-full rounded-xl p-3 mt-2" style={{
+                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+              }}>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {history.map((h, i) => {
+                    const borderColor = h.rarity === 'legendary' ? '#facc15'
+                                      : h.rarity === 'epic'      ? '#8b5cf6'
+                                      : h.rarity === 'rare'      ? '#3b82f6'
+                                                                 : '#4b5563'
+                    return (
+                      <div key={i} className="relative rounded-lg overflow-hidden" style={{ height: '70px', border: `1.5px solid ${borderColor}` }}>
+                        {h.imageUrl ? (
+                          <img src={h.imageUrl} alt={h.name} className="w-full h-full object-cover object-top" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                            <span className="text-xl opacity-30">👤</span>
+                          </div>
+                        )}
+                        {h.isNew && (
+                          <div className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-green-400" />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             )}
           </div>
         )}

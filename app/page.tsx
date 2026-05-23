@@ -65,6 +65,16 @@ const NAV_CARDS = [
     border: 'rgba(245,158,11,0.4)',
     accent: '#f59e0b',
   },
+  {
+    href: '/achievements',
+    label: 'GOALS',
+    sub: 'Earn bonus gems',
+    icon: '🎖️',
+    cls: 'nav-rank',
+    gradient: 'linear-gradient(135deg, #0a1a20 0%, #0d2440 50%, #051018 100%)',
+    border: 'rgba(34,197,94,0.4)',
+    accent: '#22c55e',
+  },
 ]
 
 export default function HomePage() {
