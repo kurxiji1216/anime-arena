@@ -1,363 +1,207 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import type { BattleResult } from '@/lib/game/battle'
 
-type OwnedCharacter = {
-  character: {
-    id: string
-    name: string
-    source_anime: string
-    rarity: 'common' | 'rare' | 'epic' | 'legendary'
-    base_hp: number
-    base_atk: number
-    base_def: number
-    base_speed: number
-  }
+type ProfileStats = {
+  pvp_wins:     number
+  pvp_battles:  number
+  player_level: number
+  username:     string | null
 }
 
-type PvPResult = BattleResult & {
-  gemsAwarded: number
-  opponentName: string
-  opponentCharacter: string
+type TopHunter = {
+  user_id:    string
+  username:   string | null
+  pvp_wins:   number
 }
 
-const RARITY_ORDER = { legendary: 0, epic: 1, rare: 2, common: 3 }
-const RARITY_BORDER = {
-  common:    'border-gray-600',
-  rare:      'border-blue-500',
-  epic:      'border-violet-500',
-  legendary: 'border-yellow-400',
-}
+// PvP tier system based on wins
+const PVP_TIERS = [
+  { minWins:   0, label: 'Unranked', color: '#6b7280', icon: '◇' },
+  { minWins:   5, label: 'Bronze',   color: '#b45309', icon: '🥉' },
+  { minWins:  20, label: 'Silver',   color: '#9ca3af', icon: '🥈' },
+  { minWins:  50, label: 'Gold',     color: '#facc15', icon: '🥇' },
+  { minWins: 100, label: 'Platinum', color: '#60a5fa', icon: '💎' },
+  { minWins: 250, label: 'Diamond',  color: '#c084fc', icon: '🌟' },
+]
 
-type Phase = 'selecting' | 'fighting'
+function getTier(wins: number) {
+  return [...PVP_TIERS].reverse().find(t => wins >= t.minWins) ?? PVP_TIERS[0]
+}
 
 export default function PvPPage() {
-  const [owned, setOwned]               = useState<OwnedCharacter[]>([])
-  const [pvpRecord, setPvpRecord]       = useState({ wins: 0, battles: 0 })
-  const [selected, setSelected]         = useState<OwnedCharacter | null>(null)
-  const [phase, setPhase]               = useState<Phase>('selecting')
-  const [fighting, setFighting]         = useState(false)
-  const [result, setResult]             = useState<PvPResult | null>(null)
-  const [displayedLog, setDisplayedLog] = useState<BattleResult['log']>([])
-  const [showResult, setShowResult]     = useState(false)
-  const intervalRef                     = useRef<ReturnType<typeof setInterval> | null>(null)
-  const logRef                          = useRef<HTMLDivElement>(null)
-  const router = useRouter()
-  const supabase = createClient()
+  const [profile, setProfile] = useState<ProfileStats | null>(null)
+  const [top,     setTop]     = useState<TopHunter[]>([])
+  const [loading, setLoading] = useState(true)
+  const [myId,    setMyId]    = useState<string | null>(null)
+  const router    = useRouter()
+  const supabase  = createClient()
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      setMyId(user.id)
 
-      const [{ data: cards }, { data: profile }] = await Promise.all([
-        supabase
-          .from('user_characters')
-          .select('character:characters(id, name, source_anime, rarity, base_hp, base_atk, base_def, base_speed)')
-          .eq('user_id', user.id),
-        supabase
-          .from('profiles')
-          .select('pvp_wins, pvp_battles')
+      const [profileRes, topRes] = await Promise.all([
+        supabase.from('profiles')
+          .select('pvp_wins, pvp_battles, player_level, username')
           .eq('user_id', user.id)
           .single(),
+        supabase.from('profiles')
+          .select('user_id, username, pvp_wins')
+          .gt('pvp_battles', 0)
+          .order('pvp_wins', { ascending: false })
+          .limit(5),
       ])
 
-      if (cards) {
-        setOwned(
-          (cards as unknown as OwnedCharacter[]).sort(
-            (a, b) => RARITY_ORDER[a.character.rarity] - RARITY_ORDER[b.character.rarity]
-          )
-        )
-      }
-      if (profile) {
-        setPvpRecord({ wins: profile.pvp_wins ?? 0, battles: profile.pvp_battles ?? 0 })
-      }
+      if (profileRes.data) setProfile(profileRes.data)
+      if (topRes.data) setTop(topRes.data)
+      setLoading(false)
     }
     load()
   }, [])
 
-  // Animate log entries one by one
-  useEffect(() => {
-    if (!result) return
-    setDisplayedLog([])
-    setShowResult(false)
-
-    let i = 0
-    intervalRef.current = setInterval(() => {
-      if (i < result.log.length) {
-        setDisplayedLog(prev => [...prev, result.log[i]])
-        i++
-        setTimeout(() => {
-          if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
-        }, 50)
-      } else {
-        if (intervalRef.current) clearInterval(intervalRef.current)
-        setShowResult(true)
-      }
-    }, 1200)
-
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [result])
-
-  function skipAnimation() {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    if (result) setDisplayedLog(result.log)
-    setShowResult(true)
-    setTimeout(() => {
-      if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
-    }, 50)
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center" style={{ background: '#06061a' }}>
+        <div className="font-game text-pink-400 text-sm animate-pulse tracking-widest">LOADING...</div>
+      </main>
+    )
   }
 
-  async function startFight() {
-    if (!selected) return
-    setFighting(true)
-
-    const res = await fetch('/api/battle/pvp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ characterId: selected.character.id }),
-    })
-    const data = await res.json()
-    setFighting(false)
-
-    if (!res.ok) {
-      alert(data.error ?? 'Something went wrong')
-      return
-    }
-
-    setResult(data)
-    setPhase('fighting')
-    // Update local record optimistically
-    setPvpRecord(prev => ({
-      wins:    prev.wins    + (data.winner === 'player' ? 1 : 0),
-      battles: prev.battles + 1,
-    }))
-  }
-
-  function resetFight() {
-    setPhase('selecting')
-    setResult(null)
-    setDisplayedLog([])
-    setShowResult(false)
-    setSelected(null)
-  }
-
-  const currentEntry = displayedLog[displayedLog.length - 1]
-  const playerHpPct  = result ? Math.max(0, ((currentEntry?.playerHp ?? result.playerMaxHp) / result.playerMaxHp) * 100) : 100
-  const enemyHpPct   = result ? Math.max(0, ((currentEntry?.enemyHp  ?? result.enemyMaxHp)  / result.enemyMaxHp)  * 100) : 100
-  const winRate      = pvpRecord.battles > 0 ? Math.round((pvpRecord.wins / pvpRecord.battles) * 100) : 0
+  const wins        = profile?.pvp_wins    ?? 0
+  const battles     = profile?.pvp_battles ?? 0
+  const losses      = Math.max(0, battles - wins)
+  const winRate     = battles > 0 ? Math.round((wins / battles) * 100) : 0
+  const tier        = getTier(wins)
+  const nextTier    = PVP_TIERS.find(t => t.minWins > wins)
+  const winsToNext  = nextTier ? nextTier.minWins - wins : null
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white p-6">
-      <div className="max-w-lg mx-auto">
+    <main className="min-h-screen text-white pb-10" style={{
+      background: 'radial-gradient(ellipse at 50% -5%, #2d0030 0%, #06061a 60%)',
+    }}>
+      <div className="max-w-lg mx-auto px-4 pt-4">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Link href="/" className="text-gray-500 hover:text-gray-300 transition-colors">← Home</Link>
-          <h1 className="text-xl font-black">⚔️ PvP</h1>
+        <div className="flex items-center justify-between mb-5">
+          <Link href="/" className="font-game text-gray-500 hover:text-gray-300 transition-colors text-sm">← Home</Link>
+          <span className="font-game font-bold text-white tracking-widest text-sm">🥊 PvP ARENA</span>
           <div className="w-16" />
         </div>
 
-        {/* PvP record */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {[
-            { label: 'Wins',     value: pvpRecord.wins },
-            { label: 'Battles',  value: pvpRecord.battles },
-            { label: 'Win Rate', value: `${winRate}%` },
-          ].map(stat => (
-            <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
-              <p className="text-2xl font-black text-white">{stat.value}</p>
-              <p className="text-gray-500 text-xs mt-0.5">{stat.label}</p>
+        {/* ── Player tier card ── */}
+        <div className="relative rounded-2xl overflow-hidden p-5 mb-4" style={{
+          background: `linear-gradient(135deg, ${tier.color}18 0%, rgba(6,6,26,0.95) 60%)`,
+          border: `1px solid ${tier.color}44`,
+        }}>
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: `radial-gradient(ellipse at 10% 50%, ${tier.color}22 0%, transparent 60%)`,
+          }} />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-7xl opacity-10 select-none">{tier.icon}</div>
+
+          <div className="relative z-10">
+            <p className="font-game text-gray-500 text-[10px] tracking-widest mb-1">YOUR TIER</p>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-3xl">{tier.icon}</span>
+              <p className="font-game font-black text-2xl" style={{ color: tier.color }}>{tier.label}</p>
             </div>
-          ))}
+            <p className="font-game text-gray-600 text-xs">{profile?.username || 'Unnamed Hunter'}</p>
+
+            {/* Progress to next tier */}
+            {nextTier && winsToNext !== null && (
+              <div className="mt-3">
+                <div className="flex justify-between font-game text-[10px] mb-1">
+                  <span className="text-gray-600">Next: {nextTier.label}</span>
+                  <span style={{ color: nextTier.color }}>{winsToNext} {winsToNext === 1 ? 'win' : 'wins'}</span>
+                </div>
+                <div className="w-full rounded-full h-1.5" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                  <div
+                    className="h-1.5 rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(((wins - tier.minWins) / Math.max(nextTier.minWins - tier.minWins, 1)) * 100, 100)}%`,
+                      background: `linear-gradient(90deg, ${tier.color}, ${nextTier.color})`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* ── SELECTING ── */}
-        {phase === 'selecting' && (
-          <>
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-5">
-              <p className="text-gray-500 text-sm mb-1">You face:</p>
-              <p className="text-violet-300 font-black text-xl">??? — a random player's best card</p>
-              <p className="text-gray-600 text-xs mt-1">Win → +15 💎 · Lose → no loss</p>
-            </div>
+        {/* ── Stats grid ── */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
+            <p className="font-game text-gray-500 text-[10px] tracking-widest mb-1">WINS</p>
+            <p className="font-game font-black text-2xl text-green-400">{wins}</p>
+          </div>
+          <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <p className="font-game text-gray-500 text-[10px] tracking-widest mb-1">LOSSES</p>
+            <p className="font-game font-black text-2xl text-red-400">{losses}</p>
+          </div>
+          <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.2)' }}>
+            <p className="font-game text-gray-500 text-[10px] tracking-widest mb-1">WIN RATE</p>
+            <p className="font-game font-black text-2xl text-violet-400">{winRate}%</p>
+          </div>
+        </div>
 
-            <p className="text-white font-bold mb-3">Choose your fighter:</p>
+        {/* ── Find opponent CTA ── */}
+        <Link
+          href="/battle/fight?mode=pvp"
+          className="block w-full font-game font-black text-xl rounded-2xl py-5 mb-2 transition-all hover:scale-[1.01] active:scale-[0.99] text-center"
+          style={{
+            background: 'linear-gradient(135deg, #db2777 0%, #831843 100%)',
+            border: '1px solid rgba(236,72,153,0.5)',
+            boxShadow: '0 0 40px rgba(219,39,119,0.3)',
+            color: '#fff',
+          }}
+        >
+          ⚔️  FIND OPPONENT
+        </Link>
+        <p className="font-game text-gray-600 text-xs text-center mb-5">
+          +15 💎 per win · No entry fee · No rank stat bonus
+        </p>
 
-            {owned.length === 0 ? (
-              <div className="text-center py-12 bg-gray-900 border border-gray-800 rounded-2xl">
-                <p className="text-5xl mb-3">🎴</p>
-                <p className="text-gray-400 mb-4">You have no characters yet!</p>
-                <Link href="/pull" className="bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl px-6 py-3 transition-colors">
-                  Pull some cards first →
-                </Link>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-3 gap-2 mb-4 max-h-64 overflow-y-auto pr-1">
-                  {owned.map(o => (
-                    <button
-                      key={o.character.id}
-                      onClick={() => setSelected(o)}
-                      className={`rounded-xl p-2.5 border-2 text-left transition-all ${
-                        selected?.character.id === o.character.id
-                          ? 'border-white bg-gray-700 scale-[1.03] shadow-lg shadow-white/10'
-                          : `${RARITY_BORDER[o.character.rarity]} bg-gray-900 hover:bg-gray-800`
-                      }`}
-                    >
-                      <div className="text-2xl text-center mb-1">🎴</div>
-                      <p className="text-white text-xs font-bold leading-tight truncate">{o.character.name}</p>
-                      <p className="text-gray-500 text-xs">{o.character.base_hp} HP</p>
-                    </button>
-                  ))}
-                </div>
-
-                {selected && (
-                  <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 mb-4">
-                    <p className="text-white font-bold text-sm mb-2">{selected.character.name}</p>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[
-                        { label: 'HP',  value: selected.character.base_hp,    color: 'text-red-400' },
-                        { label: 'ATK', value: selected.character.base_atk,   color: 'text-orange-400' },
-                        { label: 'DEF', value: selected.character.base_def,   color: 'text-blue-400' },
-                        { label: 'SPD', value: selected.character.base_speed, color: 'text-green-400' },
-                      ].map(s => (
-                        <div key={s.label} className="bg-gray-800 rounded-lg p-2 text-center">
-                          <p className="text-gray-500 text-xs">{s.label}</p>
-                          <p className={`font-black ${s.color}`}>{s.value}</p>
-                        </div>
-                      ))}
-                    </div>
+        {/* ── Top hunters ── */}
+        <div className="rounded-2xl p-4 mb-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="font-game font-bold text-white text-sm tracking-widest">🏆 TOP HUNTERS</p>
+            <Link href="/leaderboard" className="font-game text-pink-400 hover:text-pink-300 text-xs transition-colors">
+              View all →
+            </Link>
+          </div>
+          {top.length === 0 ? (
+            <p className="font-game text-gray-600 text-sm text-center py-6">No PvP battles yet — be the first!</p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {top.map((row, i) => {
+                const isMe = row.user_id === myId
+                const medal = ['🥇', '🥈', '🥉'][i] ?? `#${i + 1}`
+                return (
+                  <div
+                    key={row.user_id}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2"
+                    style={{
+                      background: isMe ? 'rgba(236,72,153,0.1)' : 'rgba(255,255,255,0.02)',
+                      border: isMe ? '1px solid rgba(236,72,153,0.3)' : '1px solid transparent',
+                    }}
+                  >
+                    <span className="font-game text-sm w-8 text-center">{medal}</span>
+                    <p className="font-game font-bold text-white text-sm flex-1 truncate">
+                      {row.username ?? 'Unknown'}
+                    </p>
+                    {isMe && <span className="font-game text-[10px] text-pink-400 font-bold">YOU</span>}
+                    <p className="font-game font-black text-pink-400 text-sm">{row.pvp_wins} wins</p>
                   </div>
-                )}
-
-                <button
-                  onClick={startFight}
-                  disabled={!selected || fighting}
-                  className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-xl rounded-2xl py-4 transition-all hover:scale-[1.01] active:scale-[0.99]"
-                >
-                  {fighting
-                    ? '⚔️ Finding opponent...'
-                    : selected
-                    ? `⚔️ Fight with ${selected.character.name}!`
-                    : 'Select a character above'}
-                </button>
-              </>
-            )}
-          </>
-        )}
-
-        {/* ── FIGHTING ── */}
-        {phase === 'fighting' && result && (
-          <>
-            {/* Opponent banner */}
-            <div className="bg-violet-950 border border-violet-700 rounded-2xl p-3 mb-4 text-center">
-              <p className="text-violet-300 text-sm">
-                vs <span className="font-black text-white">{result.opponentName}</span>
-                {' '}· {result.opponentCharacter}
-              </p>
+                )
+              })}
             </div>
-
-            {/* HP Bars */}
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-4">
-              <div className="mb-4">
-                <div className="flex justify-between mb-1.5">
-                  <span className="text-white font-bold text-sm">👤 {result.playerName}</span>
-                  <span className="text-gray-400 text-xs font-mono">
-                    {currentEntry?.playerHp ?? result.playerMaxHp} / {result.playerMaxHp}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-800 rounded-full h-4 overflow-hidden">
-                  <div
-                    className="bg-green-500 h-4 rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${playerHpPct}%` }}
-                  />
-                </div>
-              </div>
-
-              <p className="text-center text-gray-600 text-xs font-bold">⚔️ VS ⚔️</p>
-
-              <div className="mt-4">
-                <div className="flex justify-between mb-1.5">
-                  <span className="text-white font-bold text-sm">🎮 {result.enemyName}</span>
-                  <span className="text-gray-400 text-xs font-mono">
-                    {currentEntry?.enemyHp ?? result.enemyMaxHp} / {result.enemyMaxHp}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-800 rounded-full h-4 overflow-hidden">
-                  <div
-                    className="bg-violet-500 h-4 rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${enemyHpPct}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Battle Log */}
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-500 text-xs">Battle log</p>
-              {!showResult && (
-                <button
-                  onClick={skipAnimation}
-                  className="text-xs text-gray-500 hover:text-white border border-gray-700 hover:border-gray-500 rounded-full px-3 py-1 transition-colors"
-                >
-                  Skip →
-                </button>
-              )}
-            </div>
-            <div
-              ref={logRef}
-              className="bg-gray-900 border border-gray-800 rounded-2xl p-4 h-48 overflow-y-auto mb-4 space-y-1.5"
-            >
-              {displayedLog.map((entry, i) => (
-                <p key={i} className="text-sm text-gray-300 leading-relaxed">{entry.message}</p>
-              ))}
-              {!showResult && <p className="text-gray-600 text-sm animate-pulse">...</p>}
-            </div>
-
-            {/* Result */}
-            {showResult && (
-              <div className={`rounded-2xl p-5 border text-center ${
-                result.winner === 'player'
-                  ? 'bg-green-950 border-green-700'
-                  : 'bg-red-950 border-red-700'
-              }`}>
-                <p className={`text-3xl font-black mb-1 ${
-                  result.winner === 'player' ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  {result.winner === 'player' ? '🏆 Victory!' : '💀 Defeated!'}
-                </p>
-                <p className="text-gray-400 text-sm mb-1">
-                  vs {result.opponentName} · {result.opponentCharacter}
-                </p>
-                {result.gemsAwarded > 0 && (
-                  <p className="text-yellow-400 font-bold text-lg mb-1">+{result.gemsAwarded} 💎</p>
-                )}
-                <p className="text-gray-500 text-xs mt-1">
-                  Record: {pvpRecord.wins}W / {pvpRecord.battles}B ({winRate}%)
-                </p>
-
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={resetFight}
-                    className="flex-1 bg-violet-700 hover:bg-violet-600 text-white font-bold rounded-xl py-3 transition-colors text-sm"
-                  >
-                    Fight Again
-                  </button>
-                  <Link
-                    href="/leaderboard"
-                    className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl py-3 text-center transition-colors text-sm"
-                  >
-                    Leaderboard →
-                  </Link>
-                </div>
-              </div>
-            )}
-          </>
-        )}
+          )}
+        </div>
 
       </div>
     </main>

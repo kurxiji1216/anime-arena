@@ -42,6 +42,8 @@ type FullResult = BattleResult & {
   playerXpGained?: number
   newPlayerRank?: string | null
   enemyImageUrl?: string | null
+  opponentName?: string
+  opponentCharacter?: string
 }
 
 type Phase = 'selecting' | 'fighting'
@@ -254,7 +256,9 @@ function FightContent() {
     const body     = mode === 'campaign'
       ? { characterId: selected.character.id, arc: arcNum, stage: stageNum }
       : { characterId: selected.character.id }
-    const endpoint = mode === 'campaign' ? '/api/battle/campaign' : '/api/battle/tower'
+    const endpoint = mode === 'campaign' ? '/api/battle/campaign'
+                   : mode === 'pvp'      ? '/api/battle/pvp'
+                   :                       '/api/battle/tower'
 
     const res  = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     const data = await res.json()
@@ -281,7 +285,9 @@ function FightContent() {
   const currentEntry = displayedLog[displayedLog.length - 1]
   const playerHpPct  = result ? Math.max(0, ((currentEntry?.playerHp ?? result.playerMaxHp) / result.playerMaxHp) * 100) : 100
   const enemyHpPct   = result ? Math.max(0, ((currentEntry?.enemyHp  ?? result.enemyMaxHp)  / result.enemyMaxHp)  * 100) : 100
-  const backHref     = mode === 'campaign' ? `/battle/campaign/${arcNum}` : '/battle'
+  const backHref     = mode === 'campaign' ? `/battle/campaign/${arcNum}`
+                     : mode === 'pvp'      ? '/pvp'
+                     :                       '/battle'
 
   // XP bar calculations for results screen
   const charXpNeeded   = xpToNextLevel(preCharLevel)
@@ -312,6 +318,12 @@ function FightContent() {
                 <p className="font-game text-orange-400 text-xs font-bold">Floor {towerFloor}</p>
               </>
             )}
+            {mode === 'pvp' && (
+              <>
+                <p className="font-game font-bold text-sm text-white">🥊 PvP Arena</p>
+                <p className="font-game text-pink-400 text-xs font-bold">vs Random Hunter</p>
+              </>
+            )}
           </div>
           <div className="w-16" />
         </div>
@@ -333,10 +345,15 @@ function FightContent() {
               <p className="font-game text-red-500 text-[10px] tracking-widest mb-1 relative z-10">YOU FACE</p>
               {mode === 'campaign' && stage
                 ? <p className="font-game font-black text-2xl text-white relative z-10">{stage.enemyName}</p>
+                : mode === 'pvp'
+                ? <p className="font-game font-black text-2xl text-pink-300 relative z-10">A Random Hunter</p>
                 : <p className="font-game font-black text-2xl text-orange-300 relative z-10">??? Unknown Enemy</p>
               }
               {mode === 'tower' && (
                 <p className="font-game text-gray-600 text-xs mt-1 relative z-10">+4% stronger per floor · Floor {towerFloor}</p>
+              )}
+              {mode === 'pvp' && (
+                <p className="font-game text-gray-600 text-xs mt-1 relative z-10">Face another player&apos;s strongest character · +15 💎 per win</p>
               )}
             </div>
 
@@ -608,6 +625,9 @@ function FightContent() {
                     )}
                     {mode === 'tower' && result.winner === 'enemy' && (
                       <span className="text-red-400">Tower resets to Floor 1</span>
+                    )}
+                    {mode === 'pvp' && result.opponentName && (
+                      <span className="text-pink-300">vs {result.opponentName}</span>
                     )}
                   </div>
                 </div>
