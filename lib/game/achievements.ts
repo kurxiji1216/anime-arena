@@ -44,7 +44,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { key: 'clear_arc1',    icon: '🍃', category: 'battle',   reward: 50,  title: 'The Journey Begins',   description: 'Complete Campaign Arc 1' },
   { key: 'clear_arc5',    icon: '🏴‍☠️', category: 'battle',   reward: 80,  title: 'Into the New World',   description: 'Complete Campaign Arc 5' },
   { key: 'clear_arc10',   icon: '🔥', category: 'battle',   reward: 150, title: 'Beyond the Festival',  description: 'Complete Campaign Arc 10' },
-  { key: 'clear_all_arcs',icon: '👑', category: 'battle',   reward: 500, title: 'Campaign Master',      description: 'Complete all 20 campaign arcs' },
+  { key: 'clear_all_arcs',icon: '👑', category: 'battle',   reward: 500, title: 'Campaign Master',      description: 'Complete all 24 campaign arcs' },
   { key: 'tower_floor_10',icon: '🗼', category: 'battle',   reward: 50,  title: 'Tower Climber',        description: 'Reach Floor 10 in the Infinite Tower', progressTarget: 10  },
   { key: 'tower_floor_25',icon: '🌩️', category: 'battle',   reward: 100, title: 'Floor Conqueror',      description: 'Reach Floor 25 in the Infinite Tower', progressTarget: 25  },
   { key: 'pvp_first_win', icon: '🥊', category: 'battle',   reward: 40,  title: 'PvP Debut',            description: 'Win your first PvP battle' },
@@ -98,7 +98,7 @@ export function checkConditions(params: {
   if (arcDone(1))  met.add('clear_arc1')
   if (arcDone(5))  met.add('clear_arc5')
   if (arcDone(10)) met.add('clear_arc10')
-  if (Array.from({ length: 20 }, (_, i) => i + 1).every(arcDone)) met.add('clear_all_arcs')
+  if (Array.from({ length: 24 }, (_, i) => i + 1).every(arcDone)) met.add('clear_all_arcs')
   if (towerBestFloor >= 10) met.add('tower_floor_10')
   if (towerBestFloor >= 25) met.add('tower_floor_25')
   if (pvpWins >= 1)  met.add('pvp_first_win')

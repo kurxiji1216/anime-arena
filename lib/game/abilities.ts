@@ -739,6 +739,134 @@ export const ABILITIES: Record<string, Ability> = {
     description: 'Revives once at 60% HP; first 2 attacks against her deal 50% damage.',
     effect: { reviveOnce: { hpPct: 0.60 }, firstNAttacksReduction: { count: 2, pct: 0.50 } },
   },
+
+  // ════════ Arc 21 — Jujutsu Kaisen: Tokyo Jujutsu High ══════════════════════
+  'Nobara Kugisaki': {
+    name: 'Resonance',
+    icon: '🔨',
+    description: '18% chance per attack to inflict a hammer-and-nail bleed (3% max HP per turn).',
+    effect: { burnOnHitChance: { chance: 0.18, pct: 0.03 } },
+  },
+  'Maki Zenin': {
+    name: 'Cursed Tools',
+    icon: '⚔️',
+    description: 'Every attack hits twice at 55% damage each (dual weapons).',
+    effect: { alwaysMultiHit: { count: 2, damagePct: 0.55 } },
+  },
+  'Megumi Fushiguro': {
+    name: 'Divine Dogs',
+    icon: '🐺',
+    description: '25% chance to attack twice (shadow hounds).',
+    effect: { multiHitChance: { chance: 0.25, count: 2, damagePct: 1.0 } },
+  },
+  'Yuji Itadori': {
+    name: 'Divergent Fist',
+    icon: '👊',
+    description: 'First attack hits twice at 75% damage each (instant follow-up punch).',
+    effect: { openerMultiHit: { count: 2, damagePct: 0.75 } },
+  },
+  'Satoru Gojo': {
+    name: 'Infinity',
+    icon: '👁️',
+    description: 'Takes 60% less damage from every attack (limitless barrier).',
+    effect: { damageReductionPct: 0.60 },
+  },
+
+  // ════════ Arc 22 — Jujutsu Kaisen: Shibuya Incident ════════════════════════
+  'Inumaki Toge': {
+    name: 'Cursed Speech',
+    icon: '🍙',
+    description: '12% chance per attack to stun enemy with a cursed command.',
+    effect: { stunChance: { chance: 0.12, turns: 1 } },
+  },
+  'Aoi Todo': {
+    name: 'Boogie Woogie',
+    icon: '💪',
+    description: 'Every attack hits twice at 65% damage each (clap-and-strike combo).',
+    effect: { alwaysMultiHit: { count: 2, damagePct: 0.65 } },
+  },
+  'Kento Nanami': {
+    name: 'Ratio Technique',
+    icon: '🔪',
+    description: '30% chance to strike a weak point for 2× damage.',
+    effect: { critChance: 0.30, critMult: 2.0 },
+  },
+  'Sukuna': {
+    name: 'Cleave',
+    icon: '🩸',
+    description: 'Each attack deals additional damage equal to 12% of enemy max HP.',
+    effect: { bonusDamageFromEnemyMaxHpPct: 0.12 },
+  },
+  'Mahito': {
+    name: 'Idle Transfiguration',
+    icon: '👻',
+    description: 'Heals 12% max HP per turn (reshapes own body); ATK +30% below 50% HP.',
+    effect: { regenPct: 0.12, lowHpAtkBoost: { threshold: 0.50, atkPct: 0.30 } },
+  },
+
+  // ════════ Arc 23 — Bleach: Soul Society ════════════════════════════════════
+  'Hanataro Yamada': {
+    name: '4th Squad Healer',
+    icon: '💊',
+    description: 'Heals 4% max HP per turn.',
+    effect: { regenPct: 0.04 },
+  },
+  'Rukia Kuchiki': {
+    name: 'Some no Mai',
+    icon: '❄️',
+    description: '20% chance per attack to freeze enemy for 2 turns.',
+    effect: { stunChance: { chance: 0.20, turns: 2 } },
+  },
+  'Renji Abarai': {
+    name: 'Hikotsu Taiho',
+    icon: '🐍',
+    description: 'On turn 3, fires a baboon-king blast dealing 3× damage.',
+    effect: { turnXAttack: { turn: 3, mult: 3 } },
+  },
+  'Byakuya Kuchiki': {
+    name: 'Senka',
+    icon: '🌸',
+    description: 'Always strikes first; first attack ignores enemy DEF (flash step behind).',
+    effect: { firstStrike: true, openerIgnoreDef: true },
+  },
+  'Ichigo Kurosaki': {
+    name: 'Bankai: Tensa Zangetsu',
+    icon: '⚔️',
+    description: 'Below 30% HP: ATK +60% and Speed +50% (final getsuga).',
+    effect: { lowHpAtkBoost: { threshold: 0.30, atkPct: 0.60, speedPct: 0.50 } },
+  },
+
+  // ════════ Arc 24 — Bleach: Hueco Mundo ═════════════════════════════════════
+  'Don Kanonji': {
+    name: 'BOHAHAHA',
+    icon: '🎤',
+    description: '+12% to all stats (overflowing confidence).',
+    effect: { statBuffPct: { hp: 0.12, atk: 0.12, def: 0.12, speed: 0.12 } },
+  },
+  'Grimmjow Jaegerjaquez': {
+    name: 'Pantera',
+    icon: '🐆',
+    description: '30% chance for an extra attack each turn (panther savagery).',
+    effect: { extraAttackChance: 0.30 },
+  },
+  'Ulquiorra Cifer': {
+    name: 'Lanza del Relampago',
+    icon: '🦇',
+    description: 'On turn 4, fires a lightning lance dealing 20% of enemy max HP as bonus damage.',
+    effect: { turnXBonusEnemyMaxHp: { turn: 4, enemyMaxHpPct: 0.20 } },
+  },
+  'Coyote Starrk': {
+    name: 'Los Lobos',
+    icon: '🐺',
+    description: '25% chance to attack 3 times (wolf-pack pistols).',
+    effect: { multiHitChance: { chance: 0.25, count: 3, damagePct: 0.70 } },
+  },
+  'Sosuke Aizen': {
+    name: 'Kyoka Suigetsu',
+    icon: '🦋',
+    description: 'Always strikes first; 25% chance to dodge any attack (complete hypnosis).',
+    effect: { firstStrike: true, dodgeChance: 0.25 },
+  },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

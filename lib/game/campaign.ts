@@ -155,6 +155,22 @@ export const CAMPAIGN: Arc[] = [
   makeArc(20, 'Sword Art Online: Alicization', 'Sword Art Online', '🌸',
     'The Underworld\'s greatest warriors await. Fight through the Integrity Knights before the Administrator claims everything.',
     ['Leafa', 'Eugeo', 'Bercouli', 'Cardinal', 'Administrator']),
+
+  makeArc(21, 'Jujutsu Kaisen: Tokyo Jujutsu High', 'Jujutsu Kaisen', '👁️',
+    'Tokyo Jujutsu High trains the next generation of curse-fighters. Battle through Yuji\'s classmates before facing the strongest sorcerer alive.',
+    ['Nobara Kugisaki', 'Maki Zenin', 'Megumi Fushiguro', 'Yuji Itadori', 'Satoru Gojo']),
+
+  makeArc(22, 'Jujutsu Kaisen: Shibuya Incident', 'Jujutsu Kaisen', '🌃',
+    'Shibuya burns under a curtain of curses. Survive the special-grade horrors before confronting the soul-twister himself.',
+    ['Inumaki Toge', 'Aoi Todo', 'Kento Nanami', 'Sukuna', 'Mahito']),
+
+  makeArc(23, 'Bleach: Soul Society', 'Bleach', '⚔️',
+    'The Soul Society stands divided. Cross blades with the Seireitei\'s Soul Reapers before clashing with the Substitute Shinigami.',
+    ['Hanataro Yamada', 'Rukia Kuchiki', 'Renji Abarai', 'Byakuya Kuchiki', 'Ichigo Kurosaki']),
+
+  makeArc(24, 'Bleach: Hueco Mundo', 'Bleach', '🦋',
+    'The realm of hollows opens before you. Face the Espada one by one before the architect of betrayal reveals himself.',
+    ['Don Kanonji', 'Grimmjow Jaegerjaquez', 'Ulquiorra Cifer', 'Coyote Starrk', 'Sosuke Aizen']),
 ]
 
 // ─── Lookup helpers ───────────────────────────────────────────────────────────

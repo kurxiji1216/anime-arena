@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { getArc, getStage } from '@/lib/game/campaign'
+import { CAMPAIGN, getArc, getStage } from '@/lib/game/campaign'
 import { calcEffectiveStats, xpToNextLevel } from '@/lib/game/stats'
 import { getHunterRank, playerXpToLevel } from '@/lib/game/player'
 import type { BattleResult } from '@/lib/game/battle'
@@ -716,11 +716,11 @@ function FightContent() {
                   )}
                   {result.winner === 'player' && mode === 'campaign' && stageNum === 5 && (
                     <Link
-                      href={arcNum < 20 ? `/battle/campaign/${arcNum + 1}` : '/battle/campaign'}
+                      href={arcNum < CAMPAIGN.length ? `/battle/campaign/${arcNum + 1}` : '/battle/campaign'}
                       className="flex-1 font-game font-bold rounded-xl py-3 text-center text-sm transition-all hover:brightness-110"
                       style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.35)', color: '#86efac' }}
                     >
-                      {arcNum < 20 ? 'Next Arc →' : '🏆 All Done!'}
+                      {arcNum < CAMPAIGN.length ? 'Next Arc →' : '🏆 All Done!'}
                     </Link>
                   )}
                   <button

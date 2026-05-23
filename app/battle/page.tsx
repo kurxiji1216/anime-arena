@@ -52,9 +52,9 @@ export default function BattleHubPage() {
             <div className="relative z-10">
               <div className="text-4xl mb-3">📖</div>
               <p className="font-black text-white text-2xl mb-1">Campaign</p>
-              <p className="text-blue-300 text-sm">20 arcs · 100 stages · story progression</p>
+              <p className="text-blue-300 text-sm">24 arcs · 120 stages · story progression</p>
               <div className="mt-4 inline-flex items-center gap-2 bg-blue-900/60 border border-blue-700 rounded-full px-3 py-1 text-xs text-blue-300 font-semibold">
-                10 anime worlds to conquer
+                12 anime worlds to conquer
               </div>
             </div>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-8xl opacity-10">🗺️</div>

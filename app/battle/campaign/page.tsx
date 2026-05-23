@@ -24,6 +24,7 @@ export default function CampaignPage() {
   }, [])
 
   const totalCleared = cleared.length
+  const totalStages  = CAMPAIGN.length * 5
 
   return (
     <main className="min-h-screen text-white pb-10" style={{
@@ -35,18 +36,18 @@ export default function CampaignPage() {
         <div className="flex items-center justify-between mb-6">
           <Link href="/battle" className="font-game text-gray-500 hover:text-gray-300 transition-colors text-sm">← Battle</Link>
           <span className="font-game font-bold text-white tracking-widest text-sm">CAMPAIGN</span>
-          <span className="font-game text-gray-500 text-sm">{totalCleared}/100</span>
+          <span className="font-game text-gray-500 text-sm">{totalCleared}/{totalStages}</span>
         </div>
 
         {/* Progress summary */}
         <div className="rounded-2xl p-4 mb-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="flex justify-between font-game text-xs mb-2">
             <span className="text-gray-500">Total Progress</span>
-            <span className="text-blue-400">{totalCleared} / 100 stages</span>
+            <span className="text-blue-400">{totalCleared} / {totalStages} stages</span>
           </div>
           <div className="w-full rounded-full h-2" style={{ background: 'rgba(255,255,255,0.08)' }}>
             <div className="h-2 rounded-full transition-all" style={{
-              width: `${(totalCleared / 100) * 100}%`,
+              width: `${(totalCleared / totalStages) * 100}%`,
               background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
             }} />
           </div>
