@@ -150,6 +150,7 @@ function FightContent() {
   const [showResult,  setShowResult]  = useState(false)
   const [showXpBars,  setShowXpBars]  = useState(false)
   const [towerFloor,  setTowerFloor]  = useState(1)
+  const [mainId,      setMainId]      = useState<string | null>(null)
 
   // ── Player account state ──
   const [playerLevel, setPlayerLevel] = useState(1)
@@ -183,20 +184,36 @@ function FightContent() {
           .from('user_characters')
           .select('level, stars, xp, character:characters(id, name, source_anime, rarity, image_url, base_hp, base_atk, base_def, base_speed)')
           .eq('user_id', user.id),
-        supabase.from('profiles').select('tower_floor, player_level, player_xp').eq('user_id', user.id).single(),
+        supabase.from('profiles').select('tower_floor, player_level, player_xp, main_character_id').eq('user_id', user.id).single(),
       ])
 
+      let sortedOwned: OwnedCharacter[] = []
       if (cardsRes.data) {
-        setOwned(
-          (cardsRes.data as unknown as OwnedCharacter[]).sort(
-            (a, b) => RARITY_ORDER[a.character.rarity] - RARITY_ORDER[b.character.rarity]
-          )
+        sortedOwned = (cardsRes.data as unknown as OwnedCharacter[]).sort(
+          (a, b) => RARITY_ORDER[a.character.rarity] - RARITY_ORDER[b.character.rarity]
         )
+        setOwned(sortedOwned)
       }
+
+      let curPlayerXp = 0
+      let curPlayerLevel = 1
       if (profileRes.data) {
         if (mode === 'tower') setTowerFloor(profileRes.data.tower_floor ?? 1)
-        setPlayerLevel(profileRes.data.player_level ?? 1)
-        setPlayerXp(profileRes.data.player_xp    ?? 0)
+        curPlayerLevel = profileRes.data.player_level ?? 1
+        curPlayerXp = profileRes.data.player_xp ?? 0
+        setPlayerLevel(curPlayerLevel)
+        setPlayerXp(curPlayerXp)
+      }
+
+      // Auto-use main card if set and still owned
+      const mainCharId = (profileRes.data as { main_character_id: string | null } | null)?.main_character_id ?? null
+      setMainId(mainCharId)
+      if (mainCharId) {
+        const mainCard = sortedOwned.find(o => o.character.id === mainCharId)
+        if (mainCard) {
+          setSelected(mainCard)
+          startFight(mainCard, curPlayerXp, curPlayerLevel)
+        }
       }
     }
     load()
@@ -259,19 +276,20 @@ function FightContent() {
     }, 50)
   }
 
-  async function startFight() {
-    if (!selected) return
+  async function startFight(overrideChar?: OwnedCharacter, overridePlayerXp?: number, overridePlayerLevel?: number) {
+    const fighter = overrideChar ?? selected
+    if (!fighter) return
     setFighting(true)
 
     // Snapshot pre-battle values for XP bar animation
-    setPreCharXp(selected.xp ?? 0)
-    setPreCharLevel(selected.level ?? 1)
-    setPrePlayerXp(playerXp)
-    setPrePlayerLevel(playerLevel)
+    setPreCharXp(fighter.xp ?? 0)
+    setPreCharLevel(fighter.level ?? 1)
+    setPrePlayerXp(overridePlayerXp ?? playerXp)
+    setPrePlayerLevel(overridePlayerLevel ?? playerLevel)
 
     const body     = mode === 'campaign'
-      ? { characterId: selected.character.id, arc: arcNum, stage: stageNum }
-      : { characterId: selected.character.id }
+      ? { characterId: fighter.character.id, arc: arcNum, stage: stageNum }
+      : { characterId: fighter.character.id }
     const endpoint = mode === 'campaign' ? '/api/battle/campaign'
                    : mode === 'pvp'      ? '/api/battle/pvp'
                    :                       '/api/battle/tower'
@@ -286,7 +304,7 @@ function FightContent() {
     setPhase('fighting')
   }
 
-  function resetFight() {
+  function resetFight(opts?: { forcePick?: boolean }) {
     setPhase('selecting')
     setResult(null)
     setDisplayedLog([])
@@ -295,6 +313,15 @@ function FightContent() {
     setSelected(null)
     setAttackerSide(null)
     setFloatingDmg(null)
+
+    // Auto-restart with main card unless user explicitly wants to re-pick
+    if (!opts?.forcePick && mainId) {
+      const mainCard = owned.find(o => o.character.id === mainId)
+      if (mainCard) {
+        setSelected(mainCard)
+        startFight(mainCard)
+      }
+    }
   }
 
   // ── Derived values ──
@@ -477,7 +504,7 @@ function FightContent() {
 
                 {/* Fight button */}
                 <button
-                  onClick={startFight}
+                  onClick={() => startFight()}
                   disabled={!selected || fighting}
                   className="w-full font-game font-black text-xl rounded-2xl py-4 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
@@ -747,7 +774,7 @@ function FightContent() {
                   {result.winner === 'player' && mode === 'campaign' && stageNum < 5 && (
                     <Link
                       href={`/battle/fight?mode=campaign&arc=${arcNum}&stage=${stageNum + 1}`}
-                      onClick={resetFight}
+                      onClick={() => resetFight()}
                       className="flex-1 font-game font-bold rounded-xl py-3 text-center text-sm transition-all hover:brightness-110"
                       style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.35)', color: '#86efac' }}
                     >
@@ -765,7 +792,7 @@ function FightContent() {
                   )}
                   {result.winner === 'player' && mode === 'tower' && result.newFloor && (
                     <button
-                      onClick={resetFight}
+                      onClick={() => resetFight()}
                       className="flex-1 font-game font-bold rounded-xl py-3 text-center text-sm transition-all hover:brightness-110"
                       style={{ background: 'rgba(249,115,22,0.18)', border: '1px solid rgba(249,115,22,0.45)', color: '#fdba74' }}
                     >
@@ -773,11 +800,13 @@ function FightContent() {
                     </button>
                   )}
                   <button
-                    onClick={resetFight}
+                    onClick={() => resetFight({ forcePick: mainId ? true : false })}
                     className="flex-1 font-game font-bold rounded-xl py-3 text-sm transition-all hover:brightness-110"
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#d1d5db' }}
                   >
-                    {result.winner === 'player' && mode === 'tower' ? 'Stay & Re-pick' : result.winner === 'player' ? 'Again' : 'Retry'}
+                    {mainId
+                      ? (result.winner === 'player' ? 'Pick Different' : 'Pick Different')
+                      : (result.winner === 'player' && mode === 'tower' ? 'Stay & Re-pick' : result.winner === 'player' ? 'Again' : 'Retry')}
                   </button>
                   <Link
                     href={backHref}

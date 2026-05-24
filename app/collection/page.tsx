@@ -82,6 +82,9 @@ export default function CollectionPage() {
   const [showTrainPicker, setShowTrainPicker] = useState(false)
   const [selectedTrainers, setSelectedTrainers] = useState<Set<string>>(new Set())
   const [training, setTraining] = useState(false)
+  // Main card
+  const [mainId, setMainId] = useState<string | null>(null)
+  const [settingMain, setSettingMain] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -98,7 +101,7 @@ export default function CollectionPage() {
         .from('user_characters')
         .select('count, level, stars, xp, character:characters(id, name, source_anime, rarity, image_url, base_hp, base_atk, base_def, base_speed)')
         .eq('user_id', user.id),
-      supabase.from('profiles').select('gems').eq('user_id', user.id).single(),
+      supabase.from('profiles').select('gems, main_character_id').eq('user_id', user.id).single(),
       fetch('/api/equipment').then(r => r.ok ? r.json() : { inventory: [] }),
     ])
 
@@ -111,8 +114,30 @@ export default function CollectionPage() {
       setOwned(sorted)
     }
 
-    if (profileRes.data) setGems(profileRes.data.gems)
+    if (profileRes.data) {
+      setGems(profileRes.data.gems)
+      setMainId((profileRes.data as { main_character_id: string | null }).main_character_id ?? null)
+    }
     setLoading(false)
+  }
+
+  async function setAsMain(characterId: string) {
+    setSettingMain(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSettingMain(false); return }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ main_character_id: characterId })
+      .eq('user_id', user.id)
+
+    if (!error) {
+      setMainId(characterId)
+      setUpgradeMsg('⭐ Set as main card!')
+    } else {
+      setUpgradeMsg('Failed to set main card')
+    }
+    setSettingMain(false)
   }
 
   async function levelUp() {
@@ -370,6 +395,11 @@ export default function CollectionPage() {
                 onClick={() => { setSelected(o); setUpgradeMsg('') }}
                 className={`relative overflow-hidden bg-gray-900 border-2 ${style.border} ${style.glow} ${style.shimmer} rounded-xl p-3 text-left hover:scale-[1.03] hover:brightness-110 transition-all duration-200`}
               >
+                {mainId === o.character.id && (
+                  <div className="absolute top-1.5 right-1.5 z-10 bg-yellow-500 text-black text-[9px] font-bold rounded-full px-1.5 py-0.5 leading-none shadow-lg">
+                    ★ MAIN
+                  </div>
+                )}
                 {/* Portrait */}
                 <div className="w-full h-28 rounded-lg overflow-hidden mb-2 bg-gray-800">
                   {o.character.image_url ? (
@@ -574,9 +604,27 @@ export default function CollectionPage() {
                 ))}
               </div>
 
+              {/* Set as Main */}
+              <div className="mb-3">
+                {mainId === s.character.id ? (
+                  <div className="w-full bg-yellow-950 border border-yellow-700 rounded-xl px-3 py-2 text-center">
+                    <span className="text-yellow-400 font-bold text-sm">★ Main Card</span>
+                    <p className="text-yellow-600 text-[10px] mt-0.5">Auto-used in every battle</p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setAsMain(s.character.id)}
+                    disabled={settingMain}
+                    className="w-full bg-gray-800 hover:bg-gray-700 disabled:opacity-50 border border-gray-700 hover:border-yellow-700 text-white font-bold rounded-xl px-3 py-2 text-sm transition-colors"
+                  >
+                    {settingMain ? '...' : '★ Set as Main Card'}
+                  </button>
+                )}
+              </div>
+
               {/* Upgrade message */}
               {upgradeMsg && (
-                <p className={`text-sm mb-3 text-center font-medium ${upgradeMsg.startsWith('⬆️') || upgradeMsg.startsWith('✨') ? 'text-green-400' : 'text-red-400'}`}>
+                <p className={`text-sm mb-3 text-center font-medium ${upgradeMsg.startsWith('⬆️') || upgradeMsg.startsWith('✨') || upgradeMsg.startsWith('⭐') ? 'text-green-400' : 'text-red-400'}`}>
                   {upgradeMsg}
                 </p>
               )}
