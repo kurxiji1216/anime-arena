@@ -63,6 +63,15 @@ export const MILESTONE_GEMS: Record<number, number> = {
   60: 100,  // 5★ cap
 }
 
+// ─── Card Training ────────────────────────────────────────────────────────────
+// XP yield when a duplicate card is fed to another character.
+// Higher rarities + higher levels = more XP (the trainer's "value" carries over).
+export function trainerXpYield(rarity: 'common' | 'rare' | 'epic' | 'legendary', level: number): number {
+  const base: Record<string, number> = { common: 50, rare: 120, epic: 280, legendary: 600 }
+  const perLevel: Record<string, number> = { common: 5, rare: 12, epic: 28, legendary: 60 }
+  return (base[rarity] ?? 50) + (perLevel[rarity] ?? 5) * Math.max(0, level - 1)
+}
+
 // Apply XP gain — handles multi-level roll-over and collects milestone gems.
 // Returns the new level, leftover xp, total milestone gems earned, and levels gained.
 export function applyXP(

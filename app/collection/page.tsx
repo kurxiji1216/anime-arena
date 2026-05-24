@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { calcEffectiveStats, levelUpCost, maxLevelForStars, minCountForStarUp, starUpCopiesNeeded, xpToNextLevel } from '@/lib/game/stats'
+import { calcEffectiveStats, levelUpCost, maxLevelForStars, minCountForStarUp, starUpCopiesNeeded, trainerXpYield, xpToNextLevel } from '@/lib/game/stats'
 import { AbilityBadge } from '@/components/AbilityBadge'
 import type { Equipment, EquipmentSlot } from '@/lib/game/equipment'
 
@@ -78,6 +78,10 @@ export default function CollectionPage() {
   const [allEquipment, setAllEquipment] = useState<EquipmentRow[]>([])
   const [pickerSlot, setPickerSlot] = useState<EquipmentSlot | null>(null)
   const [equipBusy, setEquipBusy] = useState<string | null>(null)
+  // Training state
+  const [showTrainPicker, setShowTrainPicker] = useState(false)
+  const [selectedTrainers, setSelectedTrainers] = useState<Set<string>>(new Set())
+  const [training, setTraining] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -195,6 +199,42 @@ export default function CollectionPage() {
       setUpgradeMsg(`✨ Starred up to ${data.newStars}★! (−${data.copiesConsumed} copies)`)
     }
     setUpgrading(false)
+  }
+
+  async function train() {
+    if (!selected || selectedTrainers.size === 0) return
+    setTraining(true); setUpgradeMsg('')
+    const res = await fetch('/api/upgrade/train', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        targetCharacterId:   selected.character.id,
+        trainerCharacterIds: Array.from(selectedTrainers),
+      }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      // Update target character locally
+      setOwned(prev => prev.map(o => {
+        if (o.character.id === selected.character.id) {
+          return { ...o, level: data.newLevel, xp: data.newXp }
+        }
+        // Decrement trainer counts
+        if (selectedTrainers.has(o.character.id)) {
+          return { ...o, count: Math.max(1, (o.count ?? 1) - 1) }
+        }
+        return o
+      }))
+      setSelected({ ...selected, level: data.newLevel, xp: data.newXp })
+      setGems(data.gemsTotal ?? gems)
+      const milestoneNote = data.milestoneGems > 0 ? ` 🎯 +${data.milestoneGems}💎 milestone!` : ''
+      setUpgradeMsg(`⚡ Trained! +${data.xpGained} XP${data.levelsGained > 0 ? ` (${data.levelsGained} level${data.levelsGained === 1 ? '' : 's'})` : ''}${milestoneNote}`)
+      setSelectedTrainers(new Set())
+      setShowTrainPicker(false)
+    } else {
+      setUpgradeMsg(data.error ?? 'Training failed')
+    }
+    setTraining(false)
   }
 
   // ─── Equipment handlers ────────────────────────────────────────────────────
@@ -365,7 +405,7 @@ export default function CollectionPage() {
         return (
           <div
             className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50"
-            onClick={() => { setSelected(null); setPickerSlot(null) }}
+            onClick={() => { setSelected(null); setPickerSlot(null); setShowTrainPicker(false); setSelectedTrainers(new Set()) }}
           >
             <div
               className={`bg-gray-900 border-2 ${style.border} rounded-2xl p-5 w-full max-w-sm max-h-[90vh] overflow-y-auto`}
@@ -374,7 +414,7 @@ export default function CollectionPage() {
               {/* Header */}
               <div className="flex items-center justify-between mb-3">
                 <span className={`text-xs font-bold px-3 py-1 rounded-full ${style.badge}`}>{style.label}</span>
-                <button onClick={() => { setSelected(null); setPickerSlot(null) }} className="text-gray-500 hover:text-white text-xl leading-none">×</button>
+                <button onClick={() => { setSelected(null); setPickerSlot(null); setShowTrainPicker(false); setSelectedTrainers(new Set()) }} className="text-gray-500 hover:text-white text-xl leading-none">×</button>
               </div>
 
               {/* Portrait */}
@@ -584,6 +624,98 @@ export default function CollectionPage() {
                   </div>
                 )}
               </div>
+
+              {/* Train — feed duplicate cards for XP */}
+              {level < maxLv && (() => {
+                const trainers = owned.filter(o => o.character.id !== s.character.id && (o.count ?? 1) > 1)
+                const previewXp = Array.from(selectedTrainers).reduce((sum, id) => {
+                  const t = trainers.find(o => o.character.id === id)
+                  if (!t) return sum
+                  return sum + trainerXpYield(t.character.rarity, t.level ?? 1)
+                }, 0)
+
+                return (
+                  <div className="bg-gray-800 rounded-xl p-3 mb-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-white font-bold text-sm">🍙 Train</p>
+                      <p className="text-gray-500 text-xs">Feed duplicate copies for XP</p>
+                    </div>
+
+                    {!showTrainPicker ? (
+                      <button
+                        onClick={() => { setShowTrainPicker(true); setSelectedTrainers(new Set()) }}
+                        disabled={trainers.length === 0}
+                        className="w-full font-game font-bold text-sm rounded-lg py-2 transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+                        style={{ background: 'rgba(34,197,94,0.18)', border: '1px solid rgba(34,197,94,0.4)', color: '#86efac' }}
+                      >
+                        {trainers.length === 0
+                          ? 'No duplicate cards available'
+                          : `+ Add trainer cards (${trainers.length} available)`}
+                      </button>
+                    ) : (
+                      <div>
+                        <p className="font-game text-[10px] text-gray-500 mb-2">
+                          Select duplicates to feed (preview: <span className="text-emerald-400 font-bold">+{previewXp} XP</span>):
+                        </p>
+                        <div className="max-h-44 overflow-y-auto space-y-1 pr-1 mb-2">
+                          {trainers.map(t => {
+                            const xp = trainerXpYield(t.character.rarity, t.level ?? 1)
+                            const isSel = selectedTrainers.has(t.character.id)
+                            const rarColor = RARITY_STYLES[t.character.rarity].badge.includes('yellow') ? '#facc15'
+                                           : RARITY_STYLES[t.character.rarity].badge.includes('violet') ? '#a78bfa'
+                                           : RARITY_STYLES[t.character.rarity].badge.includes('blue')   ? '#60a5fa'
+                                           :                                                              '#9ca3af'
+                            return (
+                              <button
+                                key={t.character.id}
+                                onClick={() => {
+                                  const next = new Set(selectedTrainers)
+                                  if (next.has(t.character.id)) next.delete(t.character.id)
+                                  else next.add(t.character.id)
+                                  setSelectedTrainers(next)
+                                }}
+                                className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors"
+                                style={{
+                                  background: isSel ? `${rarColor}22` : 'rgba(255,255,255,0.04)',
+                                  border:     isSel ? `1px solid ${rarColor}80` : '1px solid transparent',
+                                }}
+                              >
+                                <div className="w-7 h-7 rounded overflow-hidden bg-gray-900 flex-shrink-0">
+                                  {t.character.image_url
+                                    ? <img src={t.character.image_url} alt={t.character.name} className="w-full h-full object-cover object-top" />
+                                    : <span className="block text-center text-lg opacity-40">👤</span>}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-game text-xs font-bold truncate" style={{ color: rarColor }}>{t.character.name}</p>
+                                  <p className="font-game text-[9px] text-gray-500">Lv.{t.level ?? 1} · ×{t.count} copies</p>
+                                </div>
+                                <span className="font-game text-[10px] font-bold text-emerald-400">+{xp} XP</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => { setShowTrainPicker(false); setSelectedTrainers(new Set()) }}
+                            disabled={training}
+                            className="flex-1 font-game font-bold text-xs rounded-lg py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 transition-colors disabled:opacity-40"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={train}
+                            disabled={training || selectedTrainers.size === 0}
+                            className="flex-2 flex-1 font-game font-bold text-xs rounded-lg py-2 transition-all hover:brightness-110 disabled:opacity-40"
+                            style={{ background: 'rgba(34,197,94,0.25)', border: '1px solid rgba(34,197,94,0.55)', color: '#86efac' }}
+                          >
+                            {training ? 'Training...' : `Train (+${previewXp} XP, ${selectedTrainers.size} card${selectedTrainers.size === 1 ? '' : 's'})`}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* Star Up */}
               <div className="bg-gray-800 rounded-xl p-3">
