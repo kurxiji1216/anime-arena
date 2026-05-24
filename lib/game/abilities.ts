@@ -87,6 +87,10 @@ export type AbilityEffect = {
   // ─── Other ──────────────────────────────────────────────────────────────────
   afterEnemyAttacksBuff?:       { count: number; atkPct: number }  // Near
   alternatingBuff?:             { atkPct: number; defPct: number } // Todoroki
+
+  // ─── Equipment-granted (also reusable by abilities) ─────────────────────────
+  ignoreDefChance?:             number   // chance per attack to ignore enemy DEF (Thunder Spear, Inverted Spear)
+  firstStrikeRound1?:           boolean  // strikes first on round 1 only (Den Den Mushi)
 }
 
 export type Ability = {
