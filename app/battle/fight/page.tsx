@@ -45,6 +45,21 @@ type FullResult = BattleResult & {
   enemyImageUrl?: string | null
   opponentName?: string
   opponentCharacter?: string
+  equipmentDropped?: {
+    key:    string
+    name:   string
+    icon:   string
+    rarity: 'common' | 'rare' | 'epic' | 'legendary'
+    slot:   'weapon' | 'armor' | 'accessory'
+    anime:  string
+  } | null
+}
+
+const DROP_RARITY_COLOR: Record<'common' | 'rare' | 'epic' | 'legendary', string> = {
+  common:    '#9ca3af',
+  rare:      '#60a5fa',
+  epic:      '#a78bfa',
+  legendary: '#facc15',
 }
 
 type Phase = 'selecting' | 'fighting'
@@ -643,6 +658,31 @@ function FightContent() {
                     )}
                   </div>
                 </div>
+
+                {/* Equipment drop banner — pops in with the XP bars */}
+                {result.winner === 'player' && showXpBars && result.equipmentDropped && (() => {
+                  const drop = result.equipmentDropped
+                  const color = DROP_RARITY_COLOR[drop.rarity]
+                  return (
+                    <div
+                      className="mx-4 mb-3 rounded-xl p-3 menu-in menu-in-1"
+                      style={{
+                        background: `linear-gradient(135deg, ${color}25, ${color}08)`,
+                        border: `1px solid ${color}77`,
+                        boxShadow: `0 0 22px ${color}33`,
+                      }}
+                    >
+                      <p className="font-game text-[10px] tracking-widest mb-1" style={{ color }}>EQUIPMENT DROP!</p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{drop.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-game font-bold text-sm" style={{ color }}>{drop.name}</p>
+                          <p className="font-game text-[10px] text-gray-400">{drop.anime} · {drop.slot.toUpperCase()} · <span style={{ color }}>{drop.rarity.toUpperCase()}</span></p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* XP bars — animate in after brief delay */}
                 {result.winner === 'player' && showXpBars && (
