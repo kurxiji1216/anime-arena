@@ -763,12 +763,21 @@ function FightContent() {
                       {arcNum < CAMPAIGN.length ? 'Next Arc →' : '🏆 All Done!'}
                     </Link>
                   )}
+                  {result.winner === 'player' && mode === 'tower' && result.newFloor && (
+                    <button
+                      onClick={resetFight}
+                      className="flex-1 font-game font-bold rounded-xl py-3 text-center text-sm transition-all hover:brightness-110"
+                      style={{ background: 'rgba(249,115,22,0.18)', border: '1px solid rgba(249,115,22,0.45)', color: '#fdba74' }}
+                    >
+                      Climb to Floor {result.newFloor} →
+                    </button>
+                  )}
                   <button
                     onClick={resetFight}
                     className="flex-1 font-game font-bold rounded-xl py-3 text-sm transition-all hover:brightness-110"
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#d1d5db' }}
                   >
-                    {result.winner === 'player' ? 'Again' : 'Retry'}
+                    {result.winner === 'player' && mode === 'tower' ? 'Stay & Re-pick' : result.winner === 'player' ? 'Again' : 'Retry'}
                   </button>
                   <Link
                     href={backHref}
