@@ -138,7 +138,7 @@ function initFighter(f: BattleFighter, isPlayer: boolean): FighterState {
     patternRecogFired:    false,
     zenitsuTriggered:     false,
 
-    lifestealPct:    0,
+    lifestealPct:    eff?.lifestealPct ?? 0,
     passiveRegenPct: 0,
   }
 }
@@ -525,6 +525,11 @@ function attemptAttack(
     ignoreDef = true
   }
 
+  // Thunder Spear / Inverted Spear — chance per attack to ignore DEF
+  if (ae?.ignoreDefChance && Math.random() < ae.ignoreDefChance) {
+    ignoreDef = true
+  }
+
   // Piccolo / turn-X attack
   if (ae?.turnXAttack && ae.turnXAttack.turn === round) {
     dmgMult *= ae.turnXAttack.mult
@@ -655,10 +660,12 @@ function attemptAttack(
 
 // ─── Decide turn order ────────────────────────────────────────────────────────
 
-function decideOrder(p: FighterState, e: FighterState): boolean {
-  // First-strike trumps all
-  if (p.firstStrike && !e.firstStrike) return true
-  if (e.firstStrike && !p.firstStrike) return false
+function decideOrder(p: FighterState, e: FighterState, round: number = 1): boolean {
+  // Round-1-only first strike (e.g. Den Den Mushi) counts ONLY on round 1
+  const pFirst = p.firstStrike || (round === 1 && (p.ability?.effect.firstStrikeRound1 ?? false))
+  const eFirst = e.firstStrike || (round === 1 && (e.ability?.effect.firstStrikeRound1 ?? false))
+  if (pFirst && !eFirst) return true
+  if (eFirst && !pFirst) return false
   // Both or neither: compare speed; ties go to player
   return p.speed >= e.speed
 }
@@ -672,7 +679,7 @@ export function runBattle(player: BattleFighter, enemy: BattleFighter): BattleRe
   const e = initFighter(enemy, false)
   const log: BattleLogEntry[] = []
 
-  const startsFirst = decideOrder(p, e)
+  const startsFirst = decideOrder(p, e, 1)
   pushLog(log, p, e,
     `⚔️ ${p.name} vs ${e.name}! ${startsFirst ? p.name : e.name} moves first!`)
 
@@ -698,7 +705,7 @@ export function runBattle(player: BattleFighter, enemy: BattleFighter): BattleRe
     checkHpTriggers(e, log, p)
 
     // Re-decide order in case a mid-fight trigger changed firstStrike
-    const playerFirst = decideOrder(p, e)
+    const playerFirst = decideOrder(p, e, round)
 
     // Attack phase: both fighters get one attack opportunity per round
     if (playerFirst) {

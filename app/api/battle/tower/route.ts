@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { runBattle, BattleFighter } from '@/lib/game/battle'
 import { getAbility } from '@/lib/game/abilities'
 import { rollEquipmentDrop } from '@/lib/game/equipment-drops'
+import { fetchEquippedItems, buildEquippedFighterStats } from '@/lib/game/battle-equipment'
 import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
 import { applyPlayerXP, playerStatBonus, PLAYER_XP_REWARDS } from '@/lib/game/player'
 
@@ -73,13 +74,21 @@ export async function POST(request: Request) {
   // Apply level + star upgrades, then player rank stat bonus (PvE only)
   const eff = calcEffectiveStats(playerBase, userChar.level ?? 1, userChar.stars ?? 1)
   const pBonus = playerStatBonus(profile?.player_level ?? 1)
+  const rankBoosted = {
+    hp:    Math.round(eff.hp    * pBonus),
+    atk:   Math.round(eff.atk   * pBonus),
+    def:   Math.round(eff.def   * pBonus),
+    speed: Math.round(eff.speed * pBonus),
+  }
+  const equipped = await fetchEquippedItems(supabase, user.id, characterId)
+  const { stats: finalStats, ability: finalAbility } = buildEquippedFighterStats(rankBoosted, playerBase.name, equipped)
   const playerChar = {
     ...playerBase,
-    base_hp:    Math.round(eff.hp    * pBonus),
-    base_atk:   Math.round(eff.atk   * pBonus),
-    base_def:   Math.round(eff.def   * pBonus),
-    base_speed: Math.round(eff.speed * pBonus),
-    ability:    getAbility(playerBase.name),
+    base_hp:    finalStats.hp,
+    base_atk:   finalStats.atk,
+    base_def:   finalStats.def,
+    base_speed: finalStats.speed,
+    ability:    finalAbility,
   }
 
   // Pick a random enemy from the appropriate rarity pool
