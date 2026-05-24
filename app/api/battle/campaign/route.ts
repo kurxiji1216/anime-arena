@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle } from '@/lib/game/battle'
 import { getAbility } from '@/lib/game/abilities'
+import { rollEquipmentDrop } from '@/lib/game/equipment-drops'
 import { getStage, isStageUnlocked, stageEnemyMultiplier, stageGemReward, arcCompleteBonus } from '@/lib/game/campaign'
 import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
 import { applyPlayerXP, playerStatBonus, PLAYER_XP_REWARDS } from '@/lib/game/player'
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
   let newPlayerRank: string | null = null
   let completionBonus = 0
   let isArcComplete = false
+  let equipmentDropped: { key: string; name: string; icon: string; rarity: string; slot: string; anime: string } | null = null
 
   if (result.winner === 'player') {
     gemsAwarded = alreadyCleared ? REPLAY_REWARD : stageGemReward(arc, stage)
@@ -151,6 +153,27 @@ export async function POST(request: Request) {
         total_wins:  (profile?.total_wins ?? 0) + 1,
       })
       .eq('user_id', user.id)
+
+    // ─── Roll for equipment drop ─────────────────────────────────────────
+    const drop = rollEquipmentDrop({
+      anime:  enemyChar.source_anime,
+      source: 'campaign',
+      arc,
+      stage,
+    })
+    if (drop) {
+      await supabase
+        .from('user_equipment')
+        .insert({ user_id: user.id, equipment_key: drop.key })
+      equipmentDropped = {
+        key:    drop.key,
+        name:   drop.name,
+        icon:   drop.icon,
+        rarity: drop.rarity,
+        slot:   drop.slot,
+        anime:  drop.anime,
+      }
+    }
   }
 
   return NextResponse.json({
@@ -165,5 +188,6 @@ export async function POST(request: Request) {
     playerXpGained,
     newPlayerRank,
     enemyImageUrl:   enemyChar.image_url ?? null,
+    equipmentDropped,
   })
 }

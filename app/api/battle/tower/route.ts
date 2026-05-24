@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runBattle, BattleFighter } from '@/lib/game/battle'
 import { getAbility } from '@/lib/game/abilities'
+import { rollEquipmentDrop } from '@/lib/game/equipment-drops'
 import { calcEffectiveStats, maxLevelForStars, applyXP, BATTLE_XP } from '@/lib/game/stats'
 import { applyPlayerXP, playerStatBonus, PLAYER_XP_REWARDS } from '@/lib/game/player'
 
@@ -106,6 +107,7 @@ export async function POST(request: Request) {
   let milestoneGems = 0
   let playerXpGained = 0
   let newPlayerRank: string | null = null
+  let equipmentDropped: { key: string; name: string; icon: string; rarity: string; slot: string; anime: string } | null = null
 
   if (result.winner === 'player') {
     gemsAwarded = GEMS_PER_FLOOR
@@ -145,6 +147,26 @@ export async function POST(request: Request) {
         total_wins:       (profile.total_wins ?? 0) + 1,
       })
       .eq('user_id', user.id)
+
+    // ─── Roll for equipment drop ─────────────────────────────────────────
+    const drop = rollEquipmentDrop({
+      anime:  baseEnemy.source_anime,
+      source: 'tower',
+      floor:  currentFloor,
+    })
+    if (drop) {
+      await supabase
+        .from('user_equipment')
+        .insert({ user_id: user.id, equipment_key: drop.key })
+      equipmentDropped = {
+        key:    drop.key,
+        name:   drop.name,
+        icon:   drop.icon,
+        rarity: drop.rarity,
+        slot:   drop.slot,
+        anime:  drop.anime,
+      }
+    }
   } else {
     // Loss — reset floor to 1
     newFloor = 1
@@ -168,5 +190,6 @@ export async function POST(request: Request) {
     playerXpGained,
     newPlayerRank,
     enemyImageUrl: baseEnemy.image_url ?? null,
+    equipmentDropped,
   })
 }
