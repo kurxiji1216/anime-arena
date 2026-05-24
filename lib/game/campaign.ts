@@ -170,7 +170,7 @@ export const CAMPAIGN: Arc[] = [
 
   makeArc(24, 'Bleach: Hueco Mundo', 'Bleach', '🦋',
     'The realm of hollows opens before you. Face the Espada one by one before the architect of betrayal reveals himself.',
-    ['Don Kanonji', 'Grimmjow Jaegerjaquez', 'Ulquiorra Cifer', 'Coyote Starrk', 'Sosuke Aizen']),
+    ['Ganju Shiba', 'Grimmjow Jaegerjaquez', 'Ulquiorra Cifer', 'Coyote Starrk', 'Sosuke Aizen']),
 ]
 
 // ─── Lookup helpers ───────────────────────────────────────────────────────────

@@ -841,11 +841,11 @@ export const ABILITIES: Record<string, Ability> = {
   },
 
   // ════════ Arc 24 — Bleach: Hueco Mundo ═════════════════════════════════════
-  'Don Kanonji': {
-    name: 'BOHAHAHA',
-    icon: '🎤',
-    description: '+12% to all stats (overflowing confidence).',
-    effect: { statBuffPct: { hp: 0.12, atk: 0.12, def: 0.12, speed: 0.12 } },
+  'Ganju Shiba': {
+    name: 'Boar Charge',
+    icon: '🐗',
+    description: '+15% attack and speed (Bonnie the boar barrels into the fight).',
+    effect: { statBuffPct: { atk: 0.15, speed: 0.15 } },
   },
   'Grimmjow Jaegerjaquez': {
     name: 'Pantera',
