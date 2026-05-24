@@ -75,6 +75,16 @@ const NAV_CARDS = [
     border: 'rgba(34,197,94,0.4)',
     accent: '#22c55e',
   },
+  {
+    href: '/equipment',
+    label: 'GEAR',
+    sub: 'Items & Sparks',
+    icon: '⚙️',
+    cls: 'nav-rank',
+    gradient: 'linear-gradient(135deg, #1a0a30 0%, #2d0a50 50%, #100620 100%)',
+    border: 'rgba(168,85,247,0.4)',
+    accent: '#a855f7',
+  },
 ]
 
 export default function HomePage() {
