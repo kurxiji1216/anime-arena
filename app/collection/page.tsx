@@ -6,6 +6,27 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { calcEffectiveStats, levelUpCost, maxLevelForStars, minCountForStarUp, starUpCopiesNeeded, xpToNextLevel } from '@/lib/game/stats'
 import { AbilityBadge } from '@/components/AbilityBadge'
+import type { Equipment, EquipmentSlot } from '@/lib/game/equipment'
+
+type EquipmentRow = {
+  id:                       string
+  equipment_key:            string
+  equipped_on_character_id: string | null
+  item:                     Equipment
+}
+
+const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'armor', 'accessory']
+const SLOT_LABELS: Record<EquipmentSlot, { label: string; icon: string }> = {
+  weapon:    { label: 'Weapon',    icon: '⚔️' },
+  armor:     { label: 'Armor',     icon: '🛡️' },
+  accessory: { label: 'Accessory', icon: '💎' },
+}
+const EQ_RARITY_COLOR: Record<Equipment['rarity'], string> = {
+  common:    '#9ca3af',
+  rare:      '#60a5fa',
+  epic:      '#a78bfa',
+  legendary: '#facc15',
+}
 
 type OwnedCharacter = {
   id: string        // user_characters row id (not used directly)
@@ -53,6 +74,10 @@ export default function CollectionPage() {
   const [selected, setSelected] = useState<OwnedCharacter | null>(null)
   const [upgrading, setUpgrading] = useState(false)
   const [upgradeMsg, setUpgradeMsg] = useState('')
+  // Equipment state
+  const [allEquipment, setAllEquipment] = useState<EquipmentRow[]>([])
+  const [pickerSlot, setPickerSlot] = useState<EquipmentSlot | null>(null)
+  const [equipBusy, setEquipBusy] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -64,13 +89,16 @@ export default function CollectionPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    const [cardsRes, profileRes] = await Promise.all([
+    const [cardsRes, profileRes, equipRes] = await Promise.all([
       supabase
         .from('user_characters')
         .select('count, level, stars, xp, character:characters(id, name, source_anime, rarity, image_url, base_hp, base_atk, base_def, base_speed)')
         .eq('user_id', user.id),
       supabase.from('profiles').select('gems').eq('user_id', user.id).single(),
+      fetch('/api/equipment').then(r => r.ok ? r.json() : { inventory: [] }),
     ])
+
+    setAllEquipment(equipRes.inventory ?? [])
 
     if (cardsRes.data) {
       const sorted = (cardsRes.data as unknown as OwnedCharacter[]).sort(
@@ -167,6 +195,44 @@ export default function CollectionPage() {
       setUpgradeMsg(`✨ Starred up to ${data.newStars}★! (−${data.copiesConsumed} copies)`)
     }
     setUpgrading(false)
+  }
+
+  // ─── Equipment handlers ────────────────────────────────────────────────────
+
+  async function equip(equipmentId: string, characterId: string) {
+    setEquipBusy(equipmentId)
+    const res = await fetch('/api/equipment/equip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ equipmentId, characterId }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setAllEquipment(prev => prev.map(row => {
+        if (row.id === equipmentId) return { ...row, equipped_on_character_id: characterId }
+        if (data.unequipped && row.id === data.unequipped.id) return { ...row, equipped_on_character_id: null }
+        return row
+      }))
+      setPickerSlot(null)
+    } else {
+      setUpgradeMsg(data.error ?? 'Failed to equip')
+    }
+    setEquipBusy(null)
+  }
+
+  async function unequipItem(equipmentId: string) {
+    setEquipBusy(equipmentId)
+    const res = await fetch('/api/equipment/unequip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ equipmentId }),
+    })
+    if (res.ok) {
+      setAllEquipment(prev => prev.map(row =>
+        row.id === equipmentId ? { ...row, equipped_on_character_id: null } : row
+      ))
+    }
+    setEquipBusy(null)
   }
 
   const filtered = owned.filter(o => {
@@ -299,7 +365,7 @@ export default function CollectionPage() {
         return (
           <div
             className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50"
-            onClick={() => setSelected(null)}
+            onClick={() => { setSelected(null); setPickerSlot(null) }}
           >
             <div
               className={`bg-gray-900 border-2 ${style.border} rounded-2xl p-5 w-full max-w-sm max-h-[90vh] overflow-y-auto`}
@@ -308,7 +374,7 @@ export default function CollectionPage() {
               {/* Header */}
               <div className="flex items-center justify-between mb-3">
                 <span className={`text-xs font-bold px-3 py-1 rounded-full ${style.badge}`}>{style.label}</span>
-                <button onClick={() => setSelected(null)} className="text-gray-500 hover:text-white text-xl leading-none">×</button>
+                <button onClick={() => { setSelected(null); setPickerSlot(null) }} className="text-gray-500 hover:text-white text-xl leading-none">×</button>
               </div>
 
               {/* Portrait */}
@@ -340,6 +406,100 @@ export default function CollectionPage() {
               <div className="mb-4">
                 <AbilityBadge characterName={s.character.name} variant="full" />
               </div>
+
+              {/* Equipment slots */}
+              {(() => {
+                const myEquipped = allEquipment.filter(r => r.equipped_on_character_id === s.character.id)
+                const equippedBySlot: Partial<Record<EquipmentSlot, EquipmentRow>> = {}
+                for (const row of myEquipped) equippedBySlot[row.item.slot] = row
+
+                return (
+                  <div className="mb-4">
+                    <p className="font-game text-gray-500 text-[10px] tracking-widest mb-1.5">EQUIPMENT</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {SLOT_ORDER.map(slot => {
+                        const row = equippedBySlot[slot]
+                        const slotMeta = SLOT_LABELS[slot]
+                        if (row) {
+                          const color = EQ_RARITY_COLOR[row.item.rarity]
+                          return (
+                            <button
+                              key={slot}
+                              onClick={() => unequipItem(row.id)}
+                              disabled={equipBusy === row.id}
+                              title={`${row.item.name} — ${row.item.description}\nClick to unequip.`}
+                              className="rounded-lg p-2 text-left transition-all hover:brightness-110 disabled:opacity-50"
+                              style={{ background: `${color}15`, border: `1px solid ${color}55` }}
+                            >
+                              <p className="font-game text-[9px] tracking-widest" style={{ color: '#6b7280' }}>{slotMeta.label.toUpperCase()}</p>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className="text-base">{row.item.icon}</span>
+                                <span className="font-game text-[10px] font-bold truncate" style={{ color }}>{row.item.name}</span>
+                              </div>
+                            </button>
+                          )
+                        }
+                        return (
+                          <button
+                            key={slot}
+                            onClick={() => setPickerSlot(slot)}
+                            className="rounded-lg p-2 text-left transition-colors hover:bg-gray-700"
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.15)' }}
+                          >
+                            <p className="font-game text-[9px] tracking-widest text-gray-600">{slotMeta.label.toUpperCase()}</p>
+                            <p className="font-game text-[10px] text-gray-500 mt-0.5">{slotMeta.icon} + Equip</p>
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Item picker */}
+                    {pickerSlot && (
+                      <div className="mt-2 rounded-lg p-2" style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.3)' }}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <p className="font-game text-[10px] text-purple-300">Choose a {SLOT_LABELS[pickerSlot].label} from {s.character.source_anime}:</p>
+                          <button onClick={() => setPickerSlot(null)} className="text-gray-500 hover:text-white text-sm">×</button>
+                        </div>
+                        {(() => {
+                          const eligible = allEquipment.filter(row =>
+                            row.item.slot   === pickerSlot &&
+                            row.item.anime  === s.character.source_anime &&
+                            row.equipped_on_character_id !== s.character.id
+                          )
+                          if (eligible.length === 0) {
+                            return (
+                              <p className="font-game text-[10px] text-gray-500 py-2 text-center">No eligible items. Win {s.character.source_anime} battles or buy in shop.</p>
+                            )
+                          }
+                          return (
+                            <div className="space-y-1.5">
+                              {eligible.map(row => {
+                                const color = EQ_RARITY_COLOR[row.item.rarity]
+                                const equippedElsewhere = row.equipped_on_character_id && row.equipped_on_character_id !== s.character.id
+                                return (
+                                  <button
+                                    key={row.id}
+                                    onClick={() => equip(row.id, s.character.id)}
+                                    disabled={equipBusy === row.id}
+                                    className="w-full flex items-center gap-2 p-1.5 rounded transition-colors hover:bg-white/10 disabled:opacity-50 text-left"
+                                  >
+                                    <span className="text-lg">{row.item.icon}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-game text-[11px] font-bold truncate" style={{ color }}>{row.item.name}</p>
+                                      <p className="font-game text-[9px] text-gray-500 truncate">{row.item.description}</p>
+                                    </div>
+                                    {equippedElsewhere && <span className="font-game text-[8px] text-yellow-500">⚠ moves</span>}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* Effective stats */}
               <div className="grid grid-cols-4 gap-2 mb-5">
