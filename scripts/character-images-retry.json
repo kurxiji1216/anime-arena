@@ -1,0 +1,96 @@
+[
+  {
+    "name": "Obito Uchiha",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b3149-j6cl8A9yup51.png",
+    "matched": true,
+    "pickedName": "Tobi"
+  },
+  {
+    "name": "Historia Reiss",
+    "anime": "Attack on Titan",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b62481-ZZDa7vn17lMU.png",
+    "matched": true,
+    "pickedName": "Krista Lenz"
+  },
+  {
+    "name": "Levi Ackerman",
+    "anime": "Attack on Titan",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b45627-CR68RyZmddGG.png",
+    "matched": true,
+    "pickedName": "Levi"
+  },
+  {
+    "name": "Zeke Yeager",
+    "anime": "Attack on Titan",
+    "error": "No results"
+  },
+  {
+    "name": "Tanjiro Kamado",
+    "anime": "Demon Slayer",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b126071-BTNEc1nRIv68.png",
+    "matched": true,
+    "pickedName": "Tanjirou Kamado"
+  },
+  {
+    "name": "Kyojuro Rengoku",
+    "anime": "Demon Slayer",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b129133-VlTPowwt68rJ.png",
+    "matched": true,
+    "pickedName": "Kyoujurou Rengoku"
+  },
+  {
+    "name": "Gyomei Himejima",
+    "anime": "Demon Slayer",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b137778-H4Uzb9cSCvZ6.jpg",
+    "matched": true,
+    "pickedName": "Gyoumei Himejima"
+  },
+  {
+    "name": "Maki Zenin",
+    "anime": "Jujutsu Kaisen",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b134167-5TCytk45YByD.png",
+    "matched": true,
+    "pickedName": "Maki Zenin"
+  },
+  {
+    "name": "Sukuna",
+    "anime": "Jujutsu Kaisen",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b133701-rCQuDpHr3UZL.png",
+    "matched": true,
+    "pickedName": "Sukuna"
+  },
+  {
+    "name": "Don Kanonji",
+    "anime": "Bleach",
+    "error": "No results"
+  },
+  {
+    "name": "Grimmjow Jaegerjaquez",
+    "anime": "Bleach",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b1080-JUNo2Or0UGZg.jpg",
+    "matched": true,
+    "pickedName": "Grimmjow Jaegerjaquez"
+  },
+  {
+    "name": "Coyote Starrk",
+    "anime": "Bleach",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b3212-F5qZe4NWlZq9.png",
+    "matched": true,
+    "pickedName": "Coyote Starrk"
+  },
+  {
+    "name": "Doma",
+    "anime": "Demon Slayer",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b144591-v2yrXtHorZFS.png",
+    "matched": true,
+    "pickedName": "Douma"
+  },
+  {
+    "name": "Pride",
+    "anime": "Fullmetal Alchemist",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/10982.jpg",
+    "matched": true,
+    "pickedName": "Selim Bradley"
+  }
+]

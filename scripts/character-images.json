@@ -1,0 +1,818 @@
+[
+  {
+    "name": "Sakura Haruno",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b145-IorfpI8arxeX.png",
+    "matched": true,
+    "pickedName": "Sakura Haruno"
+  },
+  {
+    "name": "Naruto Uzumaki",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b17-phjcWCkRuIhu.png",
+    "matched": true,
+    "pickedName": "Naruto Uzumaki"
+  },
+  {
+    "name": "Sasuke Uchiha",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b13-SISLEw1oAD7a.png",
+    "matched": true,
+    "pickedName": "Sasuke Uchiha"
+  },
+  {
+    "name": "Kakashi Hatake",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b85-mkVBh2yjxjmx.png",
+    "matched": true,
+    "pickedName": "Kakashi Hatake"
+  },
+  {
+    "name": "Itachi Uchiha",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b14-9Kb1E5oel1ke.png",
+    "matched": true,
+    "pickedName": "Itachi Uchiha"
+  },
+  {
+    "name": "Rock Lee",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b306-oUTOO45xInXt.png",
+    "matched": true,
+    "pickedName": "Rock Lee"
+  },
+  {
+    "name": "Gaara",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b1662-4E5J0LX9jZKZ.png",
+    "matched": true,
+    "pickedName": "Gaara"
+  },
+  {
+    "name": "Tsunade",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b2767-r61Cj9v8I0wl.png",
+    "matched": true,
+    "pickedName": "Tsunade Senju"
+  },
+  {
+    "name": "Minato Namikaze",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b2535-Xq9WKNPJQEt3.png",
+    "matched": true,
+    "pickedName": "Minato Namikaze"
+  },
+  {
+    "name": "Piccolo",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b914-KuS8AWjqBrqa.jpg",
+    "matched": true,
+    "pickedName": "Piccolo"
+  },
+  {
+    "name": "Gohan",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b2093-kdFZhqcNSsqW.png",
+    "matched": true,
+    "pickedName": "Gohan Son"
+  },
+  {
+    "name": "Frieza",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b3694-bDfOdSSdFfPv.png",
+    "matched": true,
+    "pickedName": "Freeza"
+  },
+  {
+    "name": "Vegeta",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b913-NIFkKazWM8VO.png",
+    "matched": true,
+    "pickedName": "Vegeta"
+  },
+  {
+    "name": "Goku",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/246-wsRRr6z1kii8.png",
+    "matched": true,
+    "pickedName": "Gokuu Son"
+  },
+  {
+    "name": "Yamcha",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b4014-of2ONLvA7T8p.jpg",
+    "matched": true,
+    "pickedName": "Yamcha"
+  },
+  {
+    "name": "Future Trunks",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b2707-YKWmn4q87oF8.png",
+    "matched": true,
+    "pickedName": "Trunks"
+  },
+  {
+    "name": "Android 18",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b4318-HfIy9rOIOZXM.png",
+    "matched": true,
+    "pickedName": "Jinzouningen 18-gou"
+  },
+  {
+    "name": "Cell",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/3908.jpg",
+    "matched": true,
+    "pickedName": "Cell"
+  },
+  {
+    "name": "Majin Buu",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/1012.jpg",
+    "matched": true,
+    "pickedName": "Majin Boo"
+  },
+  {
+    "name": "Nami",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b723-vp5hPptgnNEC.png",
+    "matched": true,
+    "pickedName": "Nami"
+  },
+  {
+    "name": "Sanji",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b305-6lisPmHtCnLT.png",
+    "matched": true,
+    "pickedName": "Sanji"
+  },
+  {
+    "name": "Portgas D. Ace",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b2072-Lc6jEdsueJUK.jpg",
+    "matched": true,
+    "pickedName": "Ace Portgas"
+  },
+  {
+    "name": "Roronoa Zoro",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b62-S7oAeA9WInjV.png",
+    "matched": true,
+    "pickedName": "Zoro Roronoa"
+  },
+  {
+    "name": "Monkey D. Luffy",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b40-MNypXsxSRb1R.png",
+    "matched": true,
+    "pickedName": "Luffy Monkey"
+  },
+  {
+    "name": "Usopp",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b724-GFGgI9AJQkfy.jpg",
+    "matched": true,
+    "pickedName": "Usopp"
+  },
+  {
+    "name": "Nico Robin",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b61-ywXUyyocEEqt.png",
+    "matched": true,
+    "pickedName": "Robin Nico"
+  },
+  {
+    "name": "Trafalgar Law",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b13767-U604OJN9dxCn.jpg",
+    "matched": true,
+    "pickedName": "Law Trafalgar"
+  },
+  {
+    "name": "Boa Hancock",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b16342-kVOF6V5Q94go.png",
+    "matched": true,
+    "pickedName": "Hancock Boa"
+  },
+  {
+    "name": "Obito Uchiha",
+    "anime": "Naruto",
+    "error": "No results"
+  },
+  {
+    "name": "Kaido",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b46109-MT7Hm4Bk93In.png",
+    "matched": true,
+    "pickedName": "Kaidou"
+  },
+  {
+    "name": "Armin Arlert",
+    "anime": "Attack on Titan",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b46494-g7xYYuBtYPnO.png",
+    "matched": true,
+    "pickedName": "Armin Arlert"
+  },
+  {
+    "name": "Historia Reiss",
+    "anime": "Attack on Titan",
+    "error": "No results"
+  },
+  {
+    "name": "Eren Yeager",
+    "anime": "Attack on Titan",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b40882-dsj7IP943WFF.jpg",
+    "matched": true,
+    "pickedName": "Eren Yeager"
+  },
+  {
+    "name": "Mikasa Ackerman",
+    "anime": "Attack on Titan",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b40881-F3gr1PkreDvj.png",
+    "matched": true,
+    "pickedName": "Mikasa Ackerman"
+  },
+  {
+    "name": "Levi Ackerman",
+    "anime": "Attack on Titan",
+    "error": "No results"
+  },
+  {
+    "name": "Connie Springer",
+    "anime": "Attack on Titan",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/n46486-izhPjzut6WCZ.png",
+    "matched": true,
+    "pickedName": "Connie Springer"
+  },
+  {
+    "name": "Sasha Blouse",
+    "anime": "Attack on Titan",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b45887-QPtJH0KwqthW.jpg",
+    "matched": true,
+    "pickedName": "Sasha Blouse"
+  },
+  {
+    "name": "Reiner Braun",
+    "anime": "Attack on Titan",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b46484-P6A2GjNQn49F.png",
+    "matched": true,
+    "pickedName": "Reiner Braun"
+  },
+  {
+    "name": "Zeke Yeager",
+    "anime": "Attack on Titan",
+    "error": "No results"
+  },
+  {
+    "name": "Eren (Founding Titan)",
+    "anime": "Attack on Titan",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b40882-dsj7IP943WFF.jpg",
+    "matched": true,
+    "pickedName": "Eren Yeager"
+  },
+  {
+    "name": "Ochaco Uraraka",
+    "anime": "My Hero Academia",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b89221-gSF2a4gPbG4m.png",
+    "matched": true,
+    "pickedName": "Ochako Uraraka"
+  },
+  {
+    "name": "Izuku Midoriya",
+    "anime": "My Hero Academia",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b89028-8w1I9o1ISHMg.png",
+    "matched": true,
+    "pickedName": "Izuku Midoriya"
+  },
+  {
+    "name": "Katsuki Bakugo",
+    "anime": "My Hero Academia",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b88892-bdOha3lNcaN6.png",
+    "matched": true,
+    "pickedName": "Katsuki Bakugou"
+  },
+  {
+    "name": "Shoto Todoroki",
+    "anime": "My Hero Academia",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b89220-KNBwaVFAR8FD.png",
+    "matched": true,
+    "pickedName": "Shouto Todoroki"
+  },
+  {
+    "name": "All Might",
+    "anime": "My Hero Academia",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b89224-K6KEuQAuYKzq.jpg",
+    "matched": true,
+    "pickedName": "Toshinori Yagi"
+  },
+  {
+    "name": "Minoru Mineta",
+    "anime": "My Hero Academia",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b89244-VVwK9loDHeTV.png",
+    "matched": true,
+    "pickedName": "Minoru Mineta"
+  },
+  {
+    "name": "Eijiro Kirishima",
+    "anime": "My Hero Academia",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b89243-QLmUyyZk5K2l.png",
+    "matched": true,
+    "pickedName": "Eijirou Kirishima"
+  },
+  {
+    "name": "Momo Yaoyorozu",
+    "anime": "My Hero Academia",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b89241-Q8KzAfX4Qe2y.png",
+    "matched": true,
+    "pickedName": "Momo Yaoyorozu"
+  },
+  {
+    "name": "Hawks",
+    "anime": "My Hero Academia",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b128299-eMEsWazNXE56.png",
+    "matched": true,
+    "pickedName": "Keigo Takami"
+  },
+  {
+    "name": "Tomura Shigaraki",
+    "anime": "My Hero Academia",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b89226-C1ZKm2U3bR4T.png",
+    "matched": true,
+    "pickedName": "Tomura Shigaraki"
+  },
+  {
+    "name": "Zenitsu Agatsuma",
+    "anime": "Demon Slayer",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b129131-FZrQ7lSlxmEr.png",
+    "matched": true,
+    "pickedName": "Zenitsu Agatsuma"
+  },
+  {
+    "name": "Inosuke Hashibira",
+    "anime": "Demon Slayer",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/n129130-SJC0Kn1DU39E.jpg",
+    "matched": true,
+    "pickedName": "Inosuke Hashibira"
+  },
+  {
+    "name": "Nezuko Kamado",
+    "anime": "Demon Slayer",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b127518-NRlq1CQ1v1ro.png",
+    "matched": true,
+    "pickedName": "Nezuko Kamado"
+  },
+  {
+    "name": "Tanjiro Kamado",
+    "anime": "Demon Slayer",
+    "error": "No results"
+  },
+  {
+    "name": "Kyojuro Rengoku",
+    "anime": "Demon Slayer",
+    "error": "No results"
+  },
+  {
+    "name": "Genya Shinazugawa",
+    "anime": "Demon Slayer",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b137776-E0QuFD7y19OQ.jpg",
+    "matched": true,
+    "pickedName": "Genya Shinazugawa"
+  },
+  {
+    "name": "Mitsuri Kanroji",
+    "anime": "Demon Slayer",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b136072-xVwyRUKdpybi.png",
+    "matched": true,
+    "pickedName": "Mitsuri Kanroji"
+  },
+  {
+    "name": "Gyomei Himejima",
+    "anime": "Demon Slayer",
+    "error": "No results"
+  },
+  {
+    "name": "Doma",
+    "anime": "Demon Slayer",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b89019-sH6Zg8rpfPWD.png",
+    "matched": false,
+    "pickedName": "Umaru Doma"
+  },
+  {
+    "name": "Muzan Kibutsuji",
+    "anime": "Demon Slayer",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b129132-4nIZakUZ1o8W.jpg",
+    "matched": true,
+    "pickedName": "Muzan Kibutsuji"
+  },
+  {
+    "name": "Misa Amane",
+    "anime": "Death Note",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b835-CiZa8y2z2gCz.png",
+    "matched": true,
+    "pickedName": "Misa Amane"
+  },
+  {
+    "name": "Near",
+    "anime": "Death Note",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/n464-6KeJpU6g7Hwj.jpg",
+    "matched": true,
+    "pickedName": "Nate River"
+  },
+  {
+    "name": "Ryuk",
+    "anime": "Death Note",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b75-IkEpzO21LgFy.jpg",
+    "matched": true,
+    "pickedName": "Ryuk"
+  },
+  {
+    "name": "Light Yagami",
+    "anime": "Death Note",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b80-26EhwSsSqQ50.png",
+    "matched": true,
+    "pickedName": "Light Yagami"
+  },
+  {
+    "name": "L Lawliet",
+    "anime": "Death Note",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b71-1W4panC53vfs.png",
+    "matched": true,
+    "pickedName": "L Lawliet"
+  },
+  {
+    "name": "Matsuda",
+    "anime": "Death Note",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/n1906-JCWKEGGook3Z.png",
+    "matched": true,
+    "pickedName": "Touta Matsuda"
+  },
+  {
+    "name": "Mello",
+    "anime": "Death Note",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b463-QBLeLf6XxVg6.png",
+    "matched": true,
+    "pickedName": "Mihael Keehl"
+  },
+  {
+    "name": "Matt",
+    "anime": "Death Note",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/n2730-SNbfxShpg90k.png",
+    "matched": true,
+    "pickedName": "Mail Jeevas"
+  },
+  {
+    "name": "Rem",
+    "anime": "Death Note",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/n1905-9GfCvLFKNRLR.png",
+    "matched": true,
+    "pickedName": "Rem"
+  },
+  {
+    "name": "Light Yagami (Kira)",
+    "anime": "Death Note",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b80-26EhwSsSqQ50.png",
+    "matched": true,
+    "pickedName": "Light Yagami"
+  },
+  {
+    "name": "Winry Rockbell",
+    "anime": "Fullmetal Alchemist",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/63-xloedtYxiJ2E.jpg",
+    "matched": true,
+    "pickedName": "Winry Rockbell"
+  },
+  {
+    "name": "Alphonse Elric",
+    "anime": "Fullmetal Alchemist",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b12-tCKu8yK5kFL5.jpg",
+    "matched": true,
+    "pickedName": "Alphonse Elric"
+  },
+  {
+    "name": "Edward Elric",
+    "anime": "Fullmetal Alchemist",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b11-TA5Nuk7EDUZG.jpg",
+    "matched": true,
+    "pickedName": "Edward Elric"
+  },
+  {
+    "name": "Scar",
+    "anime": "Fullmetal Alchemist",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b66-bLbGWXrmDqfV.png",
+    "matched": true,
+    "pickedName": "Scar"
+  },
+  {
+    "name": "Roy Mustang",
+    "anime": "Fullmetal Alchemist",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b68-moBLY2WO2am3.png",
+    "matched": true,
+    "pickedName": "Roy Mustang"
+  },
+  {
+    "name": "Maes Hughes",
+    "anime": "Fullmetal Alchemist",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b69-MRetSG8Qevvu.png",
+    "matched": true,
+    "pickedName": "Maes Hughes"
+  },
+  {
+    "name": "Greed",
+    "anime": "Fullmetal Alchemist",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b351-XMQzTuMy2Xtn.jpg",
+    "matched": true,
+    "pickedName": "Greed"
+  },
+  {
+    "name": "Olivier Armstrong",
+    "anime": "Fullmetal Alchemist",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/n3934-MKTV6tQeP8T3.png",
+    "matched": true,
+    "pickedName": "Olivier Mira Armstrong"
+  },
+  {
+    "name": "Pride",
+    "anime": "Fullmetal Alchemist",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b90202-1H7FIX2hDmYd.png",
+    "matched": false,
+    "pickedName": "Escanor"
+  },
+  {
+    "name": "Father",
+    "anime": "Fullmetal Alchemist",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/n15542-7kL0vJ9U8bVR.png",
+    "matched": true,
+    "pickedName": "Flask no Homunculus"
+  },
+  {
+    "name": "Leorio Paradinight",
+    "anime": "Hunter x Hunter",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b29-RgzoSeKmDYzl.jpg",
+    "matched": true,
+    "pickedName": "Leorio Paradinight"
+  },
+  {
+    "name": "Kurapika",
+    "anime": "Hunter x Hunter",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b28-ivA7UGnfE40a.png",
+    "matched": true,
+    "pickedName": "Kurapika"
+  },
+  {
+    "name": "Gon Freecss",
+    "anime": "Hunter x Hunter",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b30-lyFExKyDhefc.jpg",
+    "matched": true,
+    "pickedName": "Gon Freecss"
+  },
+  {
+    "name": "Killua Zoldyck",
+    "anime": "Hunter x Hunter",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b27-Z5O02kQUydpT.jpg",
+    "matched": true,
+    "pickedName": "Killua Zoldyck"
+  },
+  {
+    "name": "Hisoka Morow",
+    "anime": "Hunter x Hunter",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b31-FZckOuu7L1un.png",
+    "matched": true,
+    "pickedName": "Hisoka Morow"
+  },
+  {
+    "name": "Biscuit Krueger",
+    "anime": "Hunter x Hunter",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b13898-nHq3fRmp9uPD.png",
+    "matched": true,
+    "pickedName": "Biscuit Krueger"
+  },
+  {
+    "name": "Feitan",
+    "anime": "Hunter x Hunter",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/3195.jpg",
+    "matched": true,
+    "pickedName": "Feitan Portor"
+  },
+  {
+    "name": "Neferpitou",
+    "anime": "Hunter x Hunter",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b12300-kYzopQUTLa9A.png",
+    "matched": true,
+    "pickedName": "Neferpitou"
+  },
+  {
+    "name": "Illumi Zoldyck",
+    "anime": "Hunter x Hunter",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b57-pTFguojSOQZW.png",
+    "matched": true,
+    "pickedName": "Illumi Zoldyck"
+  },
+  {
+    "name": "Meruem",
+    "anime": "Hunter x Hunter",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b23277-EYmIxzL64Mji.png",
+    "matched": true,
+    "pickedName": "Meruem"
+  },
+  {
+    "name": "Klein",
+    "anime": "Sword Art Online",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b36830-41SWIDvhqOo4.png",
+    "matched": true,
+    "pickedName": "Ryoutarou Tsuboi"
+  },
+  {
+    "name": "Sinon",
+    "anime": "Sword Art Online",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b55147-1fCU8lONEuZQ.png",
+    "matched": true,
+    "pickedName": "Shino Asada"
+  },
+  {
+    "name": "Asuna",
+    "anime": "Sword Art Online",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b36828-j5ib0adAzGMx.png",
+    "matched": true,
+    "pickedName": "Asuna Yuuki"
+  },
+  {
+    "name": "Alice",
+    "anime": "Sword Art Online",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b75450-vDO1lQup1pe7.jpg",
+    "matched": true,
+    "pickedName": "Alice Zuberg"
+  },
+  {
+    "name": "Kirito",
+    "anime": "Sword Art Online",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b36765-BnLbXg0Tzzh9.png",
+    "matched": true,
+    "pickedName": "Kazuto Kirigaya"
+  },
+  {
+    "name": "Leafa",
+    "anime": "Sword Art Online",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b36831-JfyFU7gPPVmr.png",
+    "matched": true,
+    "pickedName": "Suguha Kirigaya"
+  },
+  {
+    "name": "Eugeo",
+    "anime": "Sword Art Online",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b70899-TwMq5mtH5ifc.jpg",
+    "matched": true,
+    "pickedName": "Eugeo"
+  },
+  {
+    "name": "Bercouli",
+    "anime": "Sword Art Online",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b126740-BQk6zlwPE7Kn.png",
+    "matched": true,
+    "pickedName": "Bercouli"
+  },
+  {
+    "name": "Cardinal",
+    "anime": "Sword Art Online",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b123199-lfDRm9MJrznY.png",
+    "matched": true,
+    "pickedName": "Cardinal"
+  },
+  {
+    "name": "Administrator",
+    "anime": "Sword Art Online",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b123195-s4QPQ0OkqaKa.png",
+    "matched": true,
+    "pickedName": "Quinella"
+  },
+  {
+    "name": "Nobara Kugisaki",
+    "anime": "Jujutsu Kaisen",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b133700-f6sOO3TcgLV6.png",
+    "matched": true,
+    "pickedName": "Nobara Kugisaki"
+  },
+  {
+    "name": "Maki Zenin",
+    "anime": "Jujutsu Kaisen",
+    "error": "No results"
+  },
+  {
+    "name": "Megumi Fushiguro",
+    "anime": "Jujutsu Kaisen",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b126635-L0y3I92JSUkN.png",
+    "matched": true,
+    "pickedName": "Megumi Fushiguro"
+  },
+  {
+    "name": "Yuji Itadori",
+    "anime": "Jujutsu Kaisen",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b127212-FVm2tD0erQ5B.png",
+    "matched": true,
+    "pickedName": "Yuuji Itadori"
+  },
+  {
+    "name": "Satoru Gojo",
+    "anime": "Jujutsu Kaisen",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b127691-9zqh1xpIubn7.png",
+    "matched": true,
+    "pickedName": "Satoru Gojou"
+  },
+  {
+    "name": "Inumaki Toge",
+    "anime": "Jujutsu Kaisen",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b157115-kdhRYQdVhH95.png",
+    "matched": true,
+    "pickedName": "Toge Inumaki"
+  },
+  {
+    "name": "Aoi Todo",
+    "anime": "Jujutsu Kaisen",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b137975-6TH7PiLWJaqy.png",
+    "matched": true,
+    "pickedName": "Aoi Toudou"
+  },
+  {
+    "name": "Kento Nanami",
+    "anime": "Jujutsu Kaisen",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b133704-8wLTGjc234q2.png",
+    "matched": true,
+    "pickedName": "Kento Nanami"
+  },
+  {
+    "name": "Sukuna",
+    "anime": "Jujutsu Kaisen",
+    "error": "No results"
+  },
+  {
+    "name": "Mahito",
+    "anime": "Jujutsu Kaisen",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b133702-Y7JRG5vAvjIL.png",
+    "matched": true,
+    "pickedName": "Mahito"
+  },
+  {
+    "name": "Hanataro Yamada",
+    "anime": "Bleach",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b2161-DyKLTXn1hkcL.png",
+    "matched": true,
+    "pickedName": "Hanatarou Yamada"
+  },
+  {
+    "name": "Rukia Kuchiki",
+    "anime": "Bleach",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b6-25WoBeWMZXBc.png",
+    "matched": true,
+    "pickedName": "Rukia Kuchiki"
+  },
+  {
+    "name": "Renji Abarai",
+    "anime": "Bleach",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b906-ImRjx5HFM8X6.png",
+    "matched": true,
+    "pickedName": "Renji Abarai"
+  },
+  {
+    "name": "Byakuya Kuchiki",
+    "anime": "Bleach",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b907-kgnDKeMtEN5y.png",
+    "matched": true,
+    "pickedName": "Byakuya Kuchiki"
+  },
+  {
+    "name": "Ichigo Kurosaki",
+    "anime": "Bleach",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b5-a7bkJgjhhigE.png",
+    "matched": true,
+    "pickedName": "Ichigo Kurosaki"
+  },
+  {
+    "name": "Don Kanonji",
+    "anime": "Bleach",
+    "error": "No results"
+  },
+  {
+    "name": "Grimmjow Jaegerjaquez",
+    "anime": "Bleach",
+    "error": "No results"
+  },
+  {
+    "name": "Ulquiorra Cifer",
+    "anime": "Bleach",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b1081-xLTqHfLL2I2W.png",
+    "matched": true,
+    "pickedName": "Ulquiorra Cifer"
+  },
+  {
+    "name": "Coyote Starrk",
+    "anime": "Bleach",
+    "error": "No results"
+  },
+  {
+    "name": "Sosuke Aizen",
+    "anime": "Bleach",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b1086-qR9218BjZTC0.png",
+    "matched": true,
+    "pickedName": "Sousuke Aizen"
+  }
+]

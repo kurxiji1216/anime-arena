@@ -109,7 +109,7 @@ function Portrait({
       filter: isAttacking ? `brightness(1.5) drop-shadow(0 0 14px ${glowColor})` : 'brightness(1)',
     }}>
       {imageUrl ? (
-        <img src={imageUrl} alt={name} className="w-full h-full object-cover object-top" />
+        <img src={imageUrl} alt={name} className="w-full h-full object-cover face-anchor" />
       ) : (
         <div className="w-full h-full flex items-center justify-center" style={{
           background: 'linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%)',
@@ -409,7 +409,7 @@ function FightContent() {
                       >
                         <div className="relative w-full h-20 overflow-hidden bg-gray-900">
                           {o.character.image_url ? (
-                            <img src={o.character.image_url} alt={o.character.name} className="w-full h-full object-cover object-top" />
+                            <img src={o.character.image_url} alt={o.character.name} className="w-full h-full object-cover face-anchor" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <span className="text-3xl opacity-25">👤</span>
@@ -446,7 +446,7 @@ function FightContent() {
                       <div className="flex items-center gap-3 mb-2.5">
                         {selected.character.image_url && (
                           <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border" style={{ borderColor: style.accent }}>
-                            <img src={selected.character.image_url} alt={selected.character.name} className="w-full h-full object-cover object-top" />
+                            <img src={selected.character.image_url} alt={selected.character.name} className="w-full h-full object-cover face-anchor" />
                           </div>
                         )}
                         <div>

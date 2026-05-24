@@ -203,6 +203,23 @@ export default function CollectionPage() {
 
   async function train() {
     if (!selected || selectedTrainers.size === 0) return
+
+    // Safety: confirm before consuming any Epic / Legendary trainer
+    const valuable = Array.from(selectedTrainers)
+      .map(id => owned.find(o => o.character.id === id))
+      .filter((o): o is OwnedCharacter => !!o && (o.character.rarity === 'epic' || o.character.rarity === 'legendary'))
+    if (valuable.length > 0) {
+      const lines = valuable.map(o => {
+        const remaining = (o.count ?? 1) - 1
+        const willDelete = remaining < 1
+        return `• ${o.character.name} (${o.character.rarity.toUpperCase()}) — ${willDelete ? '🚨 LAST COPY — will be deleted!' : `you'll have ${remaining} left`}`
+      }).join('\n')
+      const ok = window.confirm(
+        `You're about to consume valuable cards:\n\n${lines}\n\nProceed?`,
+      )
+      if (!ok) return
+    }
+
     setTraining(true); setUpgradeMsg('')
     const res = await fetch('/api/upgrade/train', {
       method: 'POST',
@@ -214,16 +231,17 @@ export default function CollectionPage() {
     })
     const data = await res.json()
     if (res.ok) {
-      // Update target character locally
-      setOwned(prev => prev.map(o => {
+      // Update target character locally; decrement or remove trainers
+      setOwned(prev => prev.flatMap(o => {
         if (o.character.id === selected.character.id) {
-          return { ...o, level: data.newLevel, xp: data.newXp }
+          return [{ ...o, level: data.newLevel, xp: data.newXp }]
         }
-        // Decrement trainer counts
         if (selectedTrainers.has(o.character.id)) {
-          return { ...o, count: Math.max(1, (o.count ?? 1) - 1) }
+          const next = (o.count ?? 1) - 1
+          if (next < 1) return []   // last copy consumed → drop from collection
+          return [{ ...o, count: next }]
         }
-        return o
+        return [o]
       }))
       setSelected({ ...selected, level: data.newLevel, xp: data.newXp })
       setGems(data.gemsTotal ?? gems)
@@ -358,7 +376,7 @@ export default function CollectionPage() {
                     <img
                       src={o.character.image_url}
                       alt={o.character.name}
-                      className="w-full h-full object-cover object-top"
+                      className="w-full h-full object-cover face-anchor"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -423,7 +441,7 @@ export default function CollectionPage() {
                   <img
                     src={s.character.image_url}
                     alt={s.character.name}
-                    className="w-full h-full object-cover object-top"
+                    className="w-full h-full object-cover face-anchor"
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-800 flex items-center justify-center">
@@ -625,20 +643,24 @@ export default function CollectionPage() {
                 )}
               </div>
 
-              {/* Train — feed duplicate cards for XP */}
+              {/* Train — feed any card for XP (with confirmation on epic/legendary) */}
               {level < maxLv && (() => {
-                const trainers = owned.filter(o => o.character.id !== s.character.id && (o.count ?? 1) > 1)
+                const trainers = owned.filter(o => o.character.id !== s.character.id)
                 const previewXp = Array.from(selectedTrainers).reduce((sum, id) => {
                   const t = trainers.find(o => o.character.id === id)
                   if (!t) return sum
                   return sum + trainerXpYield(t.character.rarity, t.level ?? 1)
                 }, 0)
+                const hasValuableSelected = Array.from(selectedTrainers).some(id => {
+                  const t = trainers.find(o => o.character.id === id)
+                  return t && (t.character.rarity === 'epic' || t.character.rarity === 'legendary')
+                })
 
                 return (
                   <div className="bg-gray-800 rounded-xl p-3 mb-2">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-white font-bold text-sm">🍙 Train</p>
-                      <p className="text-gray-500 text-xs">Feed duplicate copies for XP</p>
+                      <p className="text-gray-500 text-xs">Feed any card for XP</p>
                     </div>
 
                     {!showTrainPicker ? (
@@ -649,18 +671,20 @@ export default function CollectionPage() {
                         style={{ background: 'rgba(34,197,94,0.18)', border: '1px solid rgba(34,197,94,0.4)', color: '#86efac' }}
                       >
                         {trainers.length === 0
-                          ? 'No duplicate cards available'
-                          : `+ Add trainer cards (${trainers.length} available)`}
+                          ? 'No other cards to train with'
+                          : `+ Pick trainer cards (${trainers.length} available)`}
                       </button>
                     ) : (
                       <div>
                         <p className="font-game text-[10px] text-gray-500 mb-2">
-                          Select duplicates to feed (preview: <span className="text-emerald-400 font-bold">+{previewXp} XP</span>):
+                          Select cards to feed (preview: <span className="text-emerald-400 font-bold">+{previewXp} XP</span>):
                         </p>
                         <div className="max-h-44 overflow-y-auto space-y-1 pr-1 mb-2">
                           {trainers.map(t => {
                             const xp = trainerXpYield(t.character.rarity, t.level ?? 1)
                             const isSel = selectedTrainers.has(t.character.id)
+                            const isLastCopy = (t.count ?? 1) <= 1
+                            const isValuable = t.character.rarity === 'epic' || t.character.rarity === 'legendary'
                             const rarColor = RARITY_STYLES[t.character.rarity].badge.includes('yellow') ? '#facc15'
                                            : RARITY_STYLES[t.character.rarity].badge.includes('violet') ? '#a78bfa'
                                            : RARITY_STYLES[t.character.rarity].badge.includes('blue')   ? '#60a5fa'
@@ -682,18 +706,28 @@ export default function CollectionPage() {
                               >
                                 <div className="w-7 h-7 rounded overflow-hidden bg-gray-900 flex-shrink-0">
                                   {t.character.image_url
-                                    ? <img src={t.character.image_url} alt={t.character.name} className="w-full h-full object-cover object-top" />
+                                    ? <img src={t.character.image_url} alt={t.character.name} className="w-full h-full object-cover face-anchor" />
                                     : <span className="block text-center text-lg opacity-40">👤</span>}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-game text-xs font-bold truncate" style={{ color: rarColor }}>{t.character.name}</p>
-                                  <p className="font-game text-[9px] text-gray-500">Lv.{t.level ?? 1} · ×{t.count} copies</p>
+                                  <p className="font-game text-xs font-bold truncate flex items-center gap-1" style={{ color: rarColor }}>
+                                    {t.character.name}
+                                    {isValuable && <span className="text-[8px]" title="Confirm prompt before consuming">⚠</span>}
+                                  </p>
+                                  <p className="font-game text-[9px]" style={{ color: isLastCopy ? '#f87171' : '#6b7280' }}>
+                                    Lv.{t.level ?? 1} · ×{t.count} {isLastCopy ? '(last copy!)' : 'copies'}
+                                  </p>
                                 </div>
                                 <span className="font-game text-[10px] font-bold text-emerald-400">+{xp} XP</span>
                               </button>
                             )
                           })}
                         </div>
+                        {hasValuableSelected && (
+                          <p className="font-game text-[10px] text-amber-300 mb-2">
+                            ⚠ Selection includes epic/legendary cards. You'll be asked to confirm.
+                          </p>
+                        )}
                         <div className="flex gap-2">
                           <button
                             onClick={() => { setShowTrainPicker(false); setSelectedTrainers(new Set()) }}

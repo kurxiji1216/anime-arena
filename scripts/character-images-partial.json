@@ -1,0 +1,658 @@
+[
+  {
+    "name": "Sakura Haruno",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b145-IorfpI8arxeX.png",
+    "matched": true,
+    "pickedName": "Sakura Haruno"
+  },
+  {
+    "name": "Naruto Uzumaki",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b17-phjcWCkRuIhu.png",
+    "matched": true,
+    "pickedName": "Naruto Uzumaki"
+  },
+  {
+    "name": "Sasuke Uchiha",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b13-SISLEw1oAD7a.png",
+    "matched": true,
+    "pickedName": "Sasuke Uchiha"
+  },
+  {
+    "name": "Kakashi Hatake",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b85-mkVBh2yjxjmx.png",
+    "matched": true,
+    "pickedName": "Kakashi Hatake"
+  },
+  {
+    "name": "Itachi Uchiha",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b14-9Kb1E5oel1ke.png",
+    "matched": true,
+    "pickedName": "Itachi Uchiha"
+  },
+  {
+    "name": "Rock Lee",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b306-oUTOO45xInXt.png",
+    "matched": true,
+    "pickedName": "Rock Lee"
+  },
+  {
+    "name": "Gaara",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b1662-4E5J0LX9jZKZ.png",
+    "matched": true,
+    "pickedName": "Gaara"
+  },
+  {
+    "name": "Tsunade",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b2767-r61Cj9v8I0wl.png",
+    "matched": true,
+    "pickedName": "Tsunade Senju"
+  },
+  {
+    "name": "Obito Uchiha",
+    "anime": "Naruto",
+    "error": "No results"
+  },
+  {
+    "name": "Minato Namikaze",
+    "anime": "Naruto",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b2535-Xq9WKNPJQEt3.png",
+    "matched": true,
+    "pickedName": "Minato Namikaze"
+  },
+  {
+    "name": "Piccolo",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b914-KuS8AWjqBrqa.jpg",
+    "matched": true,
+    "pickedName": "Piccolo"
+  },
+  {
+    "name": "Gohan",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b2093-kdFZhqcNSsqW.png",
+    "matched": true,
+    "pickedName": "Gohan Son"
+  },
+  {
+    "name": "Frieza",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b3694-bDfOdSSdFfPv.png",
+    "matched": true,
+    "pickedName": "Freeza"
+  },
+  {
+    "name": "Vegeta",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b913-NIFkKazWM8VO.png",
+    "matched": true,
+    "pickedName": "Vegeta"
+  },
+  {
+    "name": "Goku",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/246-wsRRr6z1kii8.png",
+    "matched": true,
+    "pickedName": "Gokuu Son"
+  },
+  {
+    "name": "Yamcha",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b4014-of2ONLvA7T8p.jpg",
+    "matched": true,
+    "pickedName": "Yamcha"
+  },
+  {
+    "name": "Future Trunks",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b2707-YKWmn4q87oF8.png",
+    "matched": true,
+    "pickedName": "Trunks"
+  },
+  {
+    "name": "Android 18",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b4318-HfIy9rOIOZXM.png",
+    "matched": true,
+    "pickedName": "Jinzouningen 18-gou"
+  },
+  {
+    "name": "Cell",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/3908.jpg",
+    "matched": true,
+    "pickedName": "Cell"
+  },
+  {
+    "name": "Majin Buu",
+    "anime": "Dragon Ball Z",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/1012.jpg",
+    "matched": true,
+    "pickedName": "Majin Boo"
+  },
+  {
+    "name": "Nami",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b723-vp5hPptgnNEC.png",
+    "matched": true,
+    "pickedName": "Nami"
+  },
+  {
+    "name": "Sanji",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b305-6lisPmHtCnLT.png",
+    "matched": true,
+    "pickedName": "Sanji"
+  },
+  {
+    "name": "Portgas D. Ace",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b2072-Lc6jEdsueJUK.jpg",
+    "matched": true,
+    "pickedName": "Ace Portgas"
+  },
+  {
+    "name": "Roronoa Zoro",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b62-S7oAeA9WInjV.png",
+    "matched": true,
+    "pickedName": "Zoro Roronoa"
+  },
+  {
+    "name": "Monkey D. Luffy",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b40-MNypXsxSRb1R.png",
+    "matched": true,
+    "pickedName": "Luffy Monkey"
+  },
+  {
+    "name": "Usopp",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b724-GFGgI9AJQkfy.jpg",
+    "matched": true,
+    "pickedName": "Usopp"
+  },
+  {
+    "name": "Nico Robin",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b61-ywXUyyocEEqt.png",
+    "matched": true,
+    "pickedName": "Robin Nico"
+  },
+  {
+    "name": "Trafalgar Law",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b13767-U604OJN9dxCn.jpg",
+    "matched": true,
+    "pickedName": "Law Trafalgar"
+  },
+  {
+    "name": "Boa Hancock",
+    "anime": "One Piece",
+    "imageUrl": "https://s4.anilist.co/file/anilistcdn/character/large/b16342-kVOF6V5Q94go.png",
+    "matched": true,
+    "pickedName": "Hancock Boa"
+  },
+  {
+    "name": "Kaido",
+    "anime": "One Piece",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Armin Arlert",
+    "anime": "Attack on Titan",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Historia Reiss",
+    "anime": "Attack on Titan",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Eren Yeager",
+    "anime": "Attack on Titan",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Mikasa Ackerman",
+    "anime": "Attack on Titan",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Levi Ackerman",
+    "anime": "Attack on Titan",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Connie Springer",
+    "anime": "Attack on Titan",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Sasha Blouse",
+    "anime": "Attack on Titan",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Reiner Braun",
+    "anime": "Attack on Titan",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Zeke Yeager",
+    "anime": "Attack on Titan",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Eren (Founding Titan)",
+    "anime": "Attack on Titan",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Ochaco Uraraka",
+    "anime": "My Hero Academia",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Izuku Midoriya",
+    "anime": "My Hero Academia",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Katsuki Bakugo",
+    "anime": "My Hero Academia",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Shoto Todoroki",
+    "anime": "My Hero Academia",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "All Might",
+    "anime": "My Hero Academia",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Minoru Mineta",
+    "anime": "My Hero Academia",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Eijiro Kirishima",
+    "anime": "My Hero Academia",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Momo Yaoyorozu",
+    "anime": "My Hero Academia",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Hawks",
+    "anime": "My Hero Academia",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Tomura Shigaraki",
+    "anime": "My Hero Academia",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Zenitsu Agatsuma",
+    "anime": "Demon Slayer",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Inosuke Hashibira",
+    "anime": "Demon Slayer",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Nezuko Kamado",
+    "anime": "Demon Slayer",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Tanjiro Kamado",
+    "anime": "Demon Slayer",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Kyojuro Rengoku",
+    "anime": "Demon Slayer",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Genya Shinazugawa",
+    "anime": "Demon Slayer",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Mitsuri Kanroji",
+    "anime": "Demon Slayer",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Gyomei Himejima",
+    "anime": "Demon Slayer",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Doma",
+    "anime": "Demon Slayer",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Muzan Kibutsuji",
+    "anime": "Demon Slayer",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Misa Amane",
+    "anime": "Death Note",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Near",
+    "anime": "Death Note",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Ryuk",
+    "anime": "Death Note",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Light Yagami",
+    "anime": "Death Note",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "L Lawliet",
+    "anime": "Death Note",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Matsuda",
+    "anime": "Death Note",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Mello",
+    "anime": "Death Note",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Matt",
+    "anime": "Death Note",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Rem",
+    "anime": "Death Note",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Light Yagami (Kira)",
+    "anime": "Death Note",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Winry Rockbell",
+    "anime": "Fullmetal Alchemist",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Alphonse Elric",
+    "anime": "Fullmetal Alchemist",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Edward Elric",
+    "anime": "Fullmetal Alchemist",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Scar",
+    "anime": "Fullmetal Alchemist",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Roy Mustang",
+    "anime": "Fullmetal Alchemist",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Maes Hughes",
+    "anime": "Fullmetal Alchemist",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Greed",
+    "anime": "Fullmetal Alchemist",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Olivier Armstrong",
+    "anime": "Fullmetal Alchemist",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Pride",
+    "anime": "Fullmetal Alchemist",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Father",
+    "anime": "Fullmetal Alchemist",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Leorio Paradinight",
+    "anime": "Hunter x Hunter",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Kurapika",
+    "anime": "Hunter x Hunter",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Gon Freecss",
+    "anime": "Hunter x Hunter",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Killua Zoldyck",
+    "anime": "Hunter x Hunter",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Hisoka Morow",
+    "anime": "Hunter x Hunter",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Biscuit Krueger",
+    "anime": "Hunter x Hunter",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Feitan",
+    "anime": "Hunter x Hunter",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Neferpitou",
+    "anime": "Hunter x Hunter",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Illumi Zoldyck",
+    "anime": "Hunter x Hunter",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Meruem",
+    "anime": "Hunter x Hunter",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Klein",
+    "anime": "Sword Art Online",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Sinon",
+    "anime": "Sword Art Online",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Asuna",
+    "anime": "Sword Art Online",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Alice",
+    "anime": "Sword Art Online",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Kirito",
+    "anime": "Sword Art Online",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Leafa",
+    "anime": "Sword Art Online",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Eugeo",
+    "anime": "Sword Art Online",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Bercouli",
+    "anime": "Sword Art Online",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Cardinal",
+    "anime": "Sword Art Online",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Administrator",
+    "anime": "Sword Art Online",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Nobara Kugisaki",
+    "anime": "Jujutsu Kaisen",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Maki Zenin",
+    "anime": "Jujutsu Kaisen",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Megumi Fushiguro",
+    "anime": "Jujutsu Kaisen",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Yuji Itadori",
+    "anime": "Jujutsu Kaisen",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Satoru Gojo",
+    "anime": "Jujutsu Kaisen",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Inumaki Toge",
+    "anime": "Jujutsu Kaisen",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Aoi Todo",
+    "anime": "Jujutsu Kaisen",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Kento Nanami",
+    "anime": "Jujutsu Kaisen",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Sukuna",
+    "anime": "Jujutsu Kaisen",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Mahito",
+    "anime": "Jujutsu Kaisen",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Hanataro Yamada",
+    "anime": "Bleach",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Rukia Kuchiki",
+    "anime": "Bleach",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Renji Abarai",
+    "anime": "Bleach",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Byakuya Kuchiki",
+    "anime": "Bleach",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Ichigo Kurosaki",
+    "anime": "Bleach",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Don Kanonji",
+    "anime": "Bleach",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Grimmjow Jaegerjaquez",
+    "anime": "Bleach",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Ulquiorra Cifer",
+    "anime": "Bleach",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Coyote Starrk",
+    "anime": "Bleach",
+    "error": "HTTP 429"
+  },
+  {
+    "name": "Sosuke Aizen",
+    "anime": "Bleach",
+    "error": "HTTP 429"
+  }
+]

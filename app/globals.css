@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap');
 
+/* Anchor character portraits to the upper-third where anime faces typically live.
+   Beats `object-top` (which cuts faces off the bottom) for AniList headshots. */
+.face-anchor {
+  object-position: 50% 25%;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

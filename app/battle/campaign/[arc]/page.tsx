@@ -201,7 +201,7 @@ export default function ArcPage() {
                   {/* Enemy portrait thumbnail */}
                   <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0" style={{ background: 'rgba(255,255,255,0.05)' }}>
                     {portrait ? (
-                      <img src={portrait} alt={stage.enemyName} className="w-full h-full object-cover object-top" />
+                      <img src={portrait} alt={stage.enemyName} className="w-full h-full object-cover face-anchor" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <span className="text-xl opacity-30">{isBoss ? '👑' : '👤'}</span>

@@ -60,13 +60,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "You don't own one or more of those trainer cards" }, { status: 403 })
   }
 
-  // Validate counts and compute XP gain
+  // Compute XP gain. Trainers with count > 1 lose one copy; trainers with count == 1
+  // are fully consumed (the user_characters row is deleted below).
   let totalXp = 0
   for (const row of trainerRows) {
-    if ((row.count ?? 1) <= 1) {
+    if ((row.count ?? 1) < 1) {
       const char = row.character as unknown as { name: string } | null
       return NextResponse.json(
-        { error: `${char?.name ?? 'Trainer'} only has 1 copy — last copy cannot be trained.` },
+        { error: `You don't have any copies of ${char?.name ?? 'a trainer'} left.` },
         { status: 400 },
       )
     }
@@ -77,15 +78,32 @@ export async function POST(request: Request) {
   // Apply XP roll-over
   const xpResult = applyXP(level, xp, totalXp, maxLevel)
 
-  // Decrement each trainer's count by 1 in parallel
+  // For each trainer: if they have multiple copies, decrement by 1; if it's the last copy,
+  // delete the row entirely (also unequips any gear since equipped_on_character_id cascades to null).
   await Promise.all(
-    trainerRows.map(row =>
-      supabase
-        .from('user_characters')
-        .update({ count: (row.count ?? 1) - 1 })
+    trainerRows.map(row => {
+      const current = row.count ?? 1
+      if (current > 1) {
+        return supabase
+          .from('user_characters')
+          .update({ count: current - 1 })
+          .eq('user_id', user.id)
+          .eq('character_id', row.character_id)
+      }
+      // Last copy — unequip any gear they had first, then delete the ownership row
+      return supabase
+        .from('user_equipment')
+        .update({ equipped_on_character_id: null })
         .eq('user_id', user.id)
-        .eq('character_id', row.character_id),
-    ),
+        .eq('equipped_on_character_id', row.character_id)
+        .then(() =>
+          supabase
+            .from('user_characters')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('character_id', row.character_id),
+        )
+    }),
   )
 
   // Update the target's XP + level + mark daily quest done (level-up counts)

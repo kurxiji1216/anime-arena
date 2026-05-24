@@ -266,7 +266,7 @@ export default function PullPage() {
                   {/* Front */}
                   <div className={`flip-face flip-face-front rounded-2xl border-2 ${singleStyle.border} ${singleStyle.glow} ${singleStyle.shimmer} overflow-hidden relative`}>
                     {single.character.image_url ? (
-                      <img src={single.character.image_url} alt={single.character.name} className="w-full h-full object-cover object-top" />
+                      <img src={single.character.image_url} alt={single.character.name} className="w-full h-full object-cover face-anchor" />
                     ) : (
                       <div className="w-full h-full bg-gray-800 flex items-center justify-center">
                         <span className="text-6xl opacity-20">👤</span>
@@ -351,7 +351,7 @@ export default function PullPage() {
                       {/* Front */}
                       <div className={`flip-face flip-face-front rounded-lg border-2 ${s.border} ${s.glow} overflow-hidden relative`}>
                         {entry.character.image_url ? (
-                          <img src={entry.character.image_url} alt={entry.character.name} className="w-full h-full object-cover object-top" />
+                          <img src={entry.character.image_url} alt={entry.character.name} className="w-full h-full object-cover face-anchor" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
                             <span className="text-2xl opacity-30">👤</span>
@@ -526,7 +526,7 @@ export default function PullPage() {
                     return (
                       <div key={i} className="relative rounded-lg overflow-hidden" style={{ height: '70px', border: `1.5px solid ${borderColor}` }}>
                         {h.imageUrl ? (
-                          <img src={h.imageUrl} alt={h.name} className="w-full h-full object-cover object-top" />
+                          <img src={h.imageUrl} alt={h.name} className="w-full h-full object-cover face-anchor" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
                             <span className="text-xl opacity-30">👤</span>
