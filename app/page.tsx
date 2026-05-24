@@ -6,6 +6,12 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Quest } from '@/lib/game/quests'
 import { getHunterRank } from '@/lib/game/player'
+import { TUTORIAL_STEPS, TOTAL_TUTORIAL_GEMS, type TutorialStepKey } from '@/lib/game/tutorial'
+
+type TutorialState = (typeof TUTORIAL_STEPS)[number] & {
+  conditionMet: boolean
+  claimed:      boolean
+}
 
 type Profile = {
   username: string | null
@@ -90,10 +96,12 @@ const NAV_CARDS = [
 export default function HomePage() {
   const [profile, setProfile]             = useState<Profile | null>(null)
   const [quests, setQuests]               = useState<Quest[]>([])
+  const [tutorial, setTutorial]           = useState<TutorialState[]>([])
   const [loading, setLoading]             = useState(true)
   const [claiming, setClaiming]           = useState(false)
   const [claimMsg, setClaimMsg]           = useState('')
   const [claimingQuest, setClaimingQuest] = useState<string | null>(null)
+  const [claimingTutorial, setClaimingTutorial] = useState<string | null>(null)
   const [streakMsg, setStreakMsg]         = useState('')
   const [gemPop, setGemPop]              = useState(false)
   const router  = useRouter()
@@ -105,16 +113,21 @@ export default function HomePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      const [profileRes, questsRes, streakRes] = await Promise.all([
+      const [profileRes, questsRes, streakRes, tutorialRes] = await Promise.all([
         supabase.from('profiles').select('username, gems, last_daily_claim_at, streak_days, player_level, player_xp').eq('user_id', user.id).single(),
         fetch('/api/quests'),
         fetch('/api/streak', { method: 'POST' }),
+        fetch('/api/tutorial'),
       ])
 
       if (profileRes.data) setProfile(profileRes.data)
       if (questsRes.ok) {
         const q = await questsRes.json()
         setQuests(q.quests?.quests ?? [])
+      }
+      if (tutorialRes.ok) {
+        const t = await tutorialRes.json()
+        setTutorial(t.steps ?? [])
       }
       if (streakRes.ok) {
         const s = await streakRes.json()
@@ -159,6 +172,18 @@ export default function HomePage() {
       popGems()
     }
     setClaimingQuest(null)
+  }
+
+  async function claimTutorial(key: TutorialStepKey) {
+    setClaimingTutorial(key)
+    const res  = await fetch('/api/tutorial', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) })
+    const data = await res.json()
+    if (res.ok) {
+      setProfile(prev => prev ? { ...prev, gems: data.gemsTotal } : prev)
+      setTutorial(prev => prev.map(t => t.key === key ? { ...t, claimed: true } : t))
+      popGems()
+    }
+    setClaimingTutorial(null)
   }
 
   const canClaimDaily = !profile?.last_daily_claim_at ||
@@ -240,6 +265,73 @@ export default function HomePage() {
       })()}
 
       <div className="max-w-md mx-auto px-4 pt-5 space-y-3">
+
+        {/* ── Tutorial / Hunter's Path — auto-hides when all claimed ── */}
+        {tutorial.length > 0 && tutorial.some(t => !t.claimed) && (() => {
+          const claimedCount  = tutorial.filter(t => t.claimed).length
+          const claimableCount = tutorial.filter(t => t.conditionMet && !t.claimed).length
+          return (
+            <div className="menu-in menu-in-1 rounded-2xl overflow-hidden" style={{
+              background: 'linear-gradient(135deg, rgba(168,85,247,0.10), rgba(99,102,241,0.06))',
+              border: '1px solid rgba(168,85,247,0.35)',
+            }}>
+              <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🎯</span>
+                  <div>
+                    <p className="font-game font-bold text-sm tracking-widest text-purple-200">HUNTER&apos;S PATH</p>
+                    <p className="font-game text-[10px] text-gray-500">{claimedCount} / {tutorial.length} steps · up to {TOTAL_TUTORIAL_GEMS} 💎</p>
+                  </div>
+                </div>
+                {claimableCount > 0 && (
+                  <span className="font-game text-[10px] text-green-400 bg-green-900/40 border border-green-700/50 px-2 py-0.5 rounded-full animate-pulse">
+                    {claimableCount} READY
+                  </span>
+                )}
+              </div>
+              <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+                {tutorial.map(step => {
+                  const canClaim = step.conditionMet && !step.claimed
+                  return (
+                    <div key={step.key} className="flex items-center gap-3 px-4 py-3">
+                      <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                        style={{
+                          background: step.claimed ? 'rgba(255,255,255,0.05)' : `${step.color}15`,
+                          border: `1px solid ${step.claimed ? 'rgba(255,255,255,0.08)' : `${step.color}55`}`,
+                        }}
+                      >
+                        {step.claimed ? '✓' : step.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-game font-bold text-sm ${step.claimed ? 'text-gray-600 line-through' : 'text-white'}`}>
+                          {step.title}
+                        </p>
+                        <p className={`font-game text-[11px] ${step.claimed ? 'text-gray-700' : 'text-gray-500'}`}>
+                          {step.description}
+                        </p>
+                      </div>
+                      {step.claimed ? (
+                        <span className="font-game text-[10px] text-gray-700">+{step.reward}💎</span>
+                      ) : canClaim ? (
+                        <button
+                          onClick={() => claimTutorial(step.key)}
+                          disabled={claimingTutorial === step.key}
+                          className="font-game font-black text-xs px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50"
+                          style={{ background: step.color, color: '#000' }}
+                        >
+                          {claimingTutorial === step.key ? '...' : `+${step.reward}💎`}
+                        </button>
+                      ) : (
+                        <span className="font-game text-[10px] text-gray-700">+{step.reward}💎</span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Streak milestone toast ── */}
         {streakMsg && (
