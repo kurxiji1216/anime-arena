@@ -82,11 +82,24 @@ export function rollEquipmentDrop(ctx: DropContext): Equipment | null {
   }
   if (Math.random() >= dropChance) return null
 
-  // 2. Pick rarity weights based on context
-  let weights = DEFAULT_WEIGHTS
+  // 2. Pick rarity weights based on context.
+  //
+  // Plain English: early-arc bosses get a SHIFTED-UP weight set (more chance
+  // of rare/epic than a normal early-arc drop), but they still can NEVER drop
+  // legendary — the comment at the top of the file is the rule.
+  let weights: RarityWeights = DEFAULT_WEIGHTS
   if (ctx.source === 'campaign') {
-    if (ctx.arc != null && ctx.arc <= 8) weights = EARLY_WEIGHTS
-    if (ctx.stage === 5) weights = BOSS_WEIGHTS
+    const earlyArc = ctx.arc != null && ctx.arc <= 8
+    if (ctx.stage === 5) {
+      if (earlyArc) {
+        // Early boss: better than a normal early drop, but no legendary
+        weights = { common: 45, rare: 40, epic: 15, legendary: 0 }
+      } else {
+        weights = BOSS_WEIGHTS
+      }
+    } else if (earlyArc) {
+      weights = EARLY_WEIGHTS
+    }
   } else if (ctx.source === 'tower' && ctx.floor != null && ctx.floor >= 26) {
     weights = LATE_TOWER_WEIGHTS
   }

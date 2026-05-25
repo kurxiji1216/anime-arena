@@ -7,8 +7,10 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
 
-  const { equipmentId }: { equipmentId: string } = await request.json()
-  if (!equipmentId) return NextResponse.json({ error: 'Missing equipmentId' }, { status: 400 })
+  let body: { equipmentId?: unknown }
+  try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
+  if (typeof body.equipmentId !== 'string') return NextResponse.json({ error: 'Missing equipmentId' }, { status: 400 })
+  const equipmentId = body.equipmentId
 
   const { error, count } = await supabase
     .from('user_equipment')

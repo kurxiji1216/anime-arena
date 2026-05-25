@@ -29,7 +29,10 @@ const PVP_TIERS = [
 ]
 
 function getTier(wins: number) {
-  return [...PVP_TIERS].reverse().find(t => wins >= t.minWins) ?? PVP_TIERS[0]
+  for (let i = PVP_TIERS.length - 1; i >= 0; i--) {
+    if (wins >= PVP_TIERS[i].minWins) return PVP_TIERS[i]
+  }
+  return PVP_TIERS[0]
 }
 
 export default function PvPPage() {

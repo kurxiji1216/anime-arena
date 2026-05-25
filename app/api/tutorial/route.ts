@@ -63,11 +63,14 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
 
-  const { key }: { key: TutorialStepKey } = await request.json()
+  let body: { key?: unknown }
+  try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
+  if (typeof body.key !== 'string') return NextResponse.json({ error: 'Missing step key' }, { status: 400 })
+  const key = body.key as TutorialStepKey
   const step = TUTORIAL_STEPS.find(s => s.key === key)
   if (!step) return NextResponse.json({ error: 'Step not found' }, { status: 404 })
 
-  const { profile, params, claimed } = await loadTutorialState(user.id, supabase)
+  const { params, claimed } = await loadTutorialState(user.id, supabase)
   if (claimed.includes(key)) {
     return NextResponse.json({ error: 'Already claimed' }, { status: 400 })
   }
@@ -77,15 +80,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Condition not yet met' }, { status: 400 })
   }
 
-  const newClaimed = [...claimed, key]
-  const newGems    = (profile?.gems ?? 0) + step.reward
+  const { data: rows, error } = await supabase.rpc('claim_tutorial', {
+    p_key:    key,
+    p_reward: step.reward,
+  })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const row = (rows as { success: boolean; error_message: string | null; gems_awarded: number; gems_total: number }[] | null)?.[0]
+  if (!row) return NextResponse.json({ error: 'Claim failed' }, { status: 500 })
+  if (!row.success) return NextResponse.json({ error: row.error_message ?? 'Already claimed' }, { status: 400 })
 
-  const { error } = await supabase
-    .from('profiles')
-    .update({ tutorial_claimed: newClaimed, gems: newGems })
-    .eq('user_id', user.id)
-
-  if (error) return NextResponse.json({ error: 'Failed to claim' }, { status: 500 })
-
-  return NextResponse.json({ gemsAwarded: step.reward, gemsTotal: newGems })
+  return NextResponse.json({ gemsAwarded: row.gems_awarded, gemsTotal: row.gems_total })
 }

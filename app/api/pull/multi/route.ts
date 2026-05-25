@@ -1,130 +1,95 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveQuests, markDone } from '@/lib/game/quests'
-import { applyPlayerXP, PLAYER_XP_REWARDS } from '@/lib/game/player'
+import { PULL_HISTORY_MAX, type Rarity } from '@/lib/game/pulls'
 
-const MULTI_COST  = 100
-const MULTI_COUNT = 10
-const HISTORY_MAX = 20
-
-function pickRarity(): 'common' | 'rare' | 'epic' | 'legendary' {
-  const roll = Math.random() * 100
-  if (roll < 2)  return 'legendary'
-  if (roll < 10) return 'epic'
-  if (roll < 40) return 'rare'
-  return 'common'
+type PullEntry = {
+  character: {
+    id: string
+    name: string
+    rarity: Rarity
+    image_url: string | null
+    source_anime: string
+    base_hp: number
+    base_atk: number
+    base_def: number
+    base_speed: number
+  }
+  isNew: boolean
+  totalCount: number
 }
+
+type DoMultiPullRow = {
+  success: boolean
+  error_message: string | null
+  gems_remaining: number | null
+  pity_counter_new: number | null
+  player_xp_gained: number | null
+  new_player_level: number | null
+  new_player_xp: number | null
+  milestone_gems: number | null
+  player_leveled_up: boolean | null
+  pulls: PullEntry[] | null
+}
+
+const HUNTER_RANKS: { minLevel: number; rank: string }[] = [
+  { minLevel: 10, rank: 'D' }, { minLevel: 20, rank: 'C' },
+  { minLevel: 30, rank: 'B' }, { minLevel: 40, rank: 'A' },
+  { minLevel: 50, rank: 'S' }, { minLevel: 60, rank: 'SS' },
+  { minLevel: 70, rank: 'SSS' },
+]
 
 export async function POST() {
   const supabase = await createClient()
-
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('gems, daily_quests, player_level, player_xp, pity_counter, total_pulls, pull_history')
-    .eq('user_id', user.id)
-    .single()
-
-  if (!profile || profile.gems < MULTI_COST) {
-    return NextResponse.json({ error: `Not enough gems. Need ${MULTI_COST} 💎` }, { status: 400 })
+  const { data: rows, error } = await supabase.rpc('do_multi_pull')
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const row = (rows as DoMultiPullRow[] | null)?.[0]
+  if (!row)  return NextResponse.json({ error: 'Multi-pull failed' }, { status: 500 })
+  if (!row.success) {
+    return NextResponse.json({ error: row.error_message ?? 'Multi-pull failed' }, { status: 400 })
   }
 
-  // Generate 10 rarities with soft pity: guarantee ≥1 rare+ across the batch
-  const rarities: Array<'common' | 'rare' | 'epic' | 'legendary'> = Array.from(
-    { length: MULTI_COUNT }, () => pickRarity()
-  )
-  const hasRarePlus = rarities.some(r => r !== 'common')
-  if (!hasRarePlus) rarities[MULTI_COUNT - 1] = 'rare'   // last pull → at least rare
+  const pulls = row.pulls ?? []
 
-  // Fetch character pools for every rarity that appears
-  const uniqueRarities = [...new Set(rarities)]
-  const pools: Record<string, { id: string; name: string; source_anime: string; rarity: string; image_url: string | null; base_hp: number; base_atk: number; base_def: number; base_speed: number }[]> = {}
-
-  await Promise.all(
-    uniqueRarities.map(async rarity => {
-      const { data } = await supabase.from('characters').select('*').eq('rarity', rarity)
-      pools[rarity] = data ?? []
-    })
-  )
-
-  // Pick one random character per slot
-  const chosen = rarities.map(rarity => {
-    const pool = pools[rarity]
-    if (!pool || pool.length === 0) return null
-    return pool[Math.floor(Math.random() * pool.length)]
-  }).filter(Boolean)
-
-  // Award player XP (5 per pull × 10)
-  const totalPlayerXp  = PLAYER_XP_REWARDS.pull * MULTI_COUNT
-  const playerXpResult = applyPlayerXP(profile.player_level ?? 1, profile.player_xp ?? 0, totalPlayerXp)
-
-  // Pity counter: increment by 10, reset if any legendary in this batch
-  const hadLegendary = rarities.some(r => r === 'legendary')
-  const newPity      = hadLegendary ? 0 : (profile.pity_counter ?? 0) + MULTI_COUNT
-
-  // Update profile: deduct gems, mark quest, credit player XP, update pity + pulls
-  const updatedQuests = markDone(resolveQuests(profile.daily_quests), 'do_pull')
-  const gemsRemaining = profile.gems - MULTI_COST + playerXpResult.gemsToAward
-
-  await supabase
+  // Best-effort cosmetic update — pull history + daily quest. See single-pull
+  // route for why these don't need atomic guarantees.
+  const { data: profile } = await supabase
     .from('profiles')
-    .update({
-      gems:         gemsRemaining,
-      daily_quests: updatedQuests,
-      player_level: playerXpResult.newLevel,
-      player_xp:    playerXpResult.newXp,
-      pity_counter: newPity,
-      total_pulls:  (profile.total_pulls ?? 0) + MULTI_COUNT,
-    })
+    .select('daily_quests, pull_history')
     .eq('user_id', user.id)
+    .single()
+  if (profile) {
+    const newEntries = pulls.map(p => ({
+      name:     p.character.name,
+      rarity:   p.character.rarity,
+      imageUrl: p.character.image_url ?? null,
+      isNew:    p.isNew,
+      pulledAt: new Date().toISOString(),
+    }))
+    const currentHistory = Array.isArray(profile.pull_history) ? profile.pull_history : []
+    const updatedHistory = [...newEntries, ...currentHistory].slice(0, PULL_HISTORY_MAX)
+    const updatedQuests  = markDone(resolveQuests(profile.daily_quests), 'do_pull')
+    await supabase
+      .from('profiles')
+      .update({ pull_history: updatedHistory, daily_quests: updatedQuests })
+      .eq('user_id', user.id)
+  }
 
-  // Upsert user_characters for each pull in parallel
-  const pulls = await Promise.all(
-    chosen.map(async character => {
-      const { data: existing } = await supabase
-        .from('user_characters')
-        .select('id, count')
-        .eq('user_id', user.id)
-        .eq('character_id', character!.id)
-        .single()
-
-      let isNew = false
-      let totalCount = 1
-
-      if (existing) {
-        totalCount = existing.count + 1
-        await supabase
-          .from('user_characters')
-          .update({ count: totalCount, last_pulled_at: new Date().toISOString() })
-          .eq('id', existing.id)
-      } else {
-        isNew = true
-        await supabase.from('user_characters').insert({ user_id: user.id, character_id: character!.id })
-      }
-
-      return { character: character!, isNew, totalCount }
-    })
-  )
-
-  // Update pull history (prepend all new pulls, trim to max)
-  const newEntries = pulls.map(p => ({
-    name:     p.character.name,
-    rarity:   p.character.rarity,
-    imageUrl: p.character.image_url ?? null,
-    isNew:    p.isNew,
-    pulledAt: new Date().toISOString(),
-  }))
-  const currentHistory = Array.isArray(profile.pull_history) ? profile.pull_history : []
-  const updatedHistory = [...newEntries, ...currentHistory].slice(0, HISTORY_MAX)
-  await supabase.from('profiles').update({ pull_history: updatedHistory }).eq('user_id', user.id)
+  // Hunter rank crossing
+  let newPlayerRank: string | null = null
+  if (row.player_leveled_up && row.new_player_level != null) {
+    const crossed = HUNTER_RANKS.find(r => r.minLevel === row.new_player_level)
+    newPlayerRank = crossed?.rank ?? null
+  }
 
   return NextResponse.json({
     pulls,
-    gemsRemaining,
-    playerXpGained: totalPlayerXp,
-    newPlayerRank:  playerXpResult.newRank,
-    pityCounter:    newPity,
+    gemsRemaining:  row.gems_remaining,
+    playerXpGained: row.player_xp_gained,
+    newPlayerRank,
+    pityCounter:    row.pity_counter_new,
   })
 }

@@ -499,7 +499,7 @@ export default function PullPage() {
               <p className="font-game text-gray-700 text-[10px] mt-1.5 text-center">
                 {pity >= HARD_PITY
                   ? '🌟 Next pull is a guaranteed Legendary!'
-                  : `Guaranteed Legendary in ${HARD_PITY - pity} more single pulls`}
+                  : `Guaranteed Legendary within ${HARD_PITY - pity} more pulls`}
               </p>
             </div>
 

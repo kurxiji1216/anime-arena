@@ -63,14 +63,23 @@ export default function ProfilePage() {
 
   async function saveUsername() {
     setSaving(true); setSaveMsg('')
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { error } = await supabase
-      .from('profiles')
-      .update({ username: username.trim() || null })
-      .eq('user_id', user.id)
-    setSaveMsg(error ? 'Failed to save.' : 'Saved!')
-    setSaving(false)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setSaveMsg('Please sign in again.')
+        return
+      }
+      // Client-side length guard mirrors the input maxLength; the proper fix
+      // (server-side validation) is tracked separately.
+      const trimmed = username.trim().slice(0, 32)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ username: trimmed || null })
+        .eq('user_id', user.id)
+      setSaveMsg(error ? 'Failed to save.' : 'Saved!')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function signOut() {

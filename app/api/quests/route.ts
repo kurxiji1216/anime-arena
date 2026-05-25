@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveQuests, type QuestKey } from '@/lib/game/quests'
-import { applyPlayerXP, PLAYER_XP_REWARDS } from '@/lib/game/player'
 
 // GET /api/quests — fetch today's quests (initialises if new day)
 export async function GET() {
@@ -27,56 +26,57 @@ export async function GET() {
   return NextResponse.json({ quests })
 }
 
-// POST /api/quests — claim reward for a completed quest
+// POST /api/quests — claim reward for a completed quest.
+//
+// Plain English: the eligibility check (is the quest done? not already
+// claimed?) AND the gem grant happen inside one row-locked DB function, so
+// two fast clicks can't both award the reward.
+type ClaimQuestRow = {
+  success: boolean
+  error_message: string | null
+  gems_awarded: number
+  gems_total: number
+  player_xp_gained: number
+  new_player_level: number
+  new_player_xp: number
+  milestone_gems: number
+  player_leveled_up: boolean
+}
+
+const HUNTER_RANKS: { minLevel: number; rank: string }[] = [
+  { minLevel: 10, rank: 'D' }, { minLevel: 20, rank: 'C' },
+  { minLevel: 30, rank: 'B' }, { minLevel: 40, rank: 'A' },
+  { minLevel: 50, rank: 'S' }, { minLevel: 60, rank: 'SS' },
+  { minLevel: 70, rank: 'SSS' },
+]
+
 export async function POST(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
 
-  const { key }: { key: QuestKey } = await request.json()
+  let body: { key?: unknown }
+  try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
+  if (typeof body.key !== 'string') return NextResponse.json({ error: 'Missing quest key' }, { status: 400 })
+  const key = body.key as QuestKey
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('daily_quests, gems, player_level, player_xp')
-    .eq('user_id', user.id)
-    .single()
-
-  if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
-
-  const quests = resolveQuests(profile.daily_quests)
-  const quest = quests.quests.find(q => q.key === key)
-
-  if (!quest)        return NextResponse.json({ error: 'Quest not found' }, { status: 404 })
-  if (!quest.done)   return NextResponse.json({ error: 'Quest not completed yet' }, { status: 400 })
-  if (quest.claimed) return NextResponse.json({ error: 'Already claimed' }, { status: 400 })
-
-  // Mark claimed and award gems + player XP
-  const updated = {
-    ...quests,
-    quests: quests.quests.map(q => q.key === key ? { ...q, claimed: true } : q),
+  const { data: rows, error } = await supabase.rpc('claim_quest', { p_key: key })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const row = (rows as ClaimQuestRow[] | null)?.[0]
+  if (!row)  return NextResponse.json({ error: 'Claim failed' }, { status: 500 })
+  if (!row.success) {
+    return NextResponse.json({ error: row.error_message ?? 'Claim failed' }, { status: 400 })
   }
 
-  const playerXpResult = applyPlayerXP(
-    profile.player_level ?? 1,
-    profile.player_xp ?? 0,
-    PLAYER_XP_REWARDS.questClaim,
-  )
-  const newGems = profile.gems + quest.reward + playerXpResult.gemsToAward
-
-  await supabase
-    .from('profiles')
-    .update({
-      daily_quests: updated,
-      gems:         newGems,
-      player_level: playerXpResult.newLevel,
-      player_xp:    playerXpResult.newXp,
-    })
-    .eq('user_id', user.id)
+  let newPlayerRank: string | null = null
+  if (row.player_leveled_up && row.new_player_level != null) {
+    newPlayerRank = HUNTER_RANKS.find(r => r.minLevel === row.new_player_level)?.rank ?? null
+  }
 
   return NextResponse.json({
-    gemsAwarded:    quest.reward,
-    gemsTotal:      newGems,
-    playerXpGained: PLAYER_XP_REWARDS.questClaim,
-    newPlayerRank:  playerXpResult.newRank,
+    gemsAwarded:    row.gems_awarded,
+    gemsTotal:      row.gems_total,
+    playerXpGained: row.player_xp_gained,
+    newPlayerRank,
   })
 }

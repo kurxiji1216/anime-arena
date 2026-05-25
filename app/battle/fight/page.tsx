@@ -169,9 +169,25 @@ function FightContent() {
   const [floatingDmg,   setFloatingDmg]   = useState<{ id: number; val: number; side: 'player' | 'enemy' } | null>(null)
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
   const logRef      = useRef<HTMLDivElement>(null)
   const router      = useRouter()
   const supabase    = createClient()
+
+  // Track every setTimeout so we can clear them all on skip / unmount.
+  // Previously a late timeout could fire after the user navigated away or
+  // skipped, resetting attackerSide / floatingDmg to stale values.
+  function schedule(fn: () => void, ms: number) {
+    const id = setTimeout(() => {
+      timeoutsRef.current.delete(id)
+      fn()
+    }, ms)
+    timeoutsRef.current.add(id)
+  }
+  function clearAllTimeouts() {
+    for (const id of timeoutsRef.current) clearTimeout(id)
+    timeoutsRef.current.clear()
+  }
 
   // ── Load owned characters + profile ──
   useEffect(() => {
@@ -241,36 +257,40 @@ function FightContent() {
             setAttackerSide('player')
             setEnemyFlashKey(k => k + 1)
             setFloatingDmg({ id: Date.now(), val: dmg, side: 'enemy' })
-            setTimeout(() => { setAttackerSide(null); setFloatingDmg(null) }, 700)
+            schedule(() => { setAttackerSide(null); setFloatingDmg(null) }, 700)
           } else if (entry.playerHp < prev.playerHp) {
             const dmg = prev.playerHp - entry.playerHp
             setAttackerSide('enemy')
             setPlayerFlashKey(k => k + 1)
             setFloatingDmg({ id: Date.now(), val: dmg, side: 'player' })
-            setTimeout(() => { setAttackerSide(null); setFloatingDmg(null) }, 700)
+            schedule(() => { setAttackerSide(null); setFloatingDmg(null) }, 700)
           }
         }
 
         setDisplayedLog(prev => [...prev, entry])
         i++
-        setTimeout(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight }, 50)
+        schedule(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight }, 50)
       } else {
-        if (intervalRef.current) clearInterval(intervalRef.current)
+        if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
         setShowResult(true)
-        setTimeout(() => setShowXpBars(true), 500)
+        schedule(() => setShowXpBars(true), 500)
       }
     }, 1200)
 
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+    return () => {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+      clearAllTimeouts()
+    }
   }, [result])
 
   function skipAnimation() {
-    if (intervalRef.current) clearInterval(intervalRef.current)
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+    clearAllTimeouts()                     // ← cancel any pending damage-reset timers
     if (result) setDisplayedLog(result.log)
     setAttackerSide(null)
     setFloatingDmg(null)
     setShowResult(true)
-    setTimeout(() => {
+    schedule(() => {
       if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
       setShowXpBars(true)
     }, 50)
@@ -332,9 +352,20 @@ function FightContent() {
                      : mode === 'pvp'      ? '/pvp'
                      :                       '/battle'
 
-  // XP bar calculations for results screen
-  const charXpNeeded   = xpToNextLevel(preCharLevel)
-  const charXpPct      = Math.min(((result?.xpGained  ?? 0) / charXpNeeded)  * 100, 100)
+  // XP bar calculations for results screen.
+  //
+  // Plain English: if a battle leveled the character up, we want the bar to
+  // fill toward the NEW level's progress, not blow past 100% of the old one.
+  // We compute final-level XP from pre-state + xpGained, accounting for the
+  // levels gained server-side.
+  const levelsGainedNum = result?.levelsGained ?? 0
+  const finalCharLevel = preCharLevel + levelsGainedNum
+  // Banked XP after roll-overs = pre + gained - sum(threshold for each level passed)
+  let bankedAfter = preCharXp + (result?.xpGained ?? 0)
+  for (let lv = preCharLevel; lv < finalCharLevel; lv++) bankedAfter -= xpToNextLevel(lv)
+  const charXpNeeded = xpToNextLevel(finalCharLevel)
+  const charXpPct    = Math.min((Math.max(0, bankedAfter) / Math.max(1, charXpNeeded)) * 100, 100)
+
   const playerXpNeeded = playerXpToLevel(prePlayerLevel)
   const playerXpPct    = Math.min(((result?.playerXpGained ?? 0) / playerXpNeeded) * 100, 100)
 
@@ -646,19 +677,35 @@ function FightContent() {
             </div>
 
             {/* ── Result ── */}
-            {showResult && (
+            {showResult && (() => {
+              // Three possible outcomes now: player win, enemy win, or a draw
+              // (both KO'd at once, or the round-cap timed out with equal HP).
+              const won  = result.winner === 'player'
+              const lost = result.winner === 'enemy'
+              const drew = result.winner === 'draw'
+              const headerBg = won
+                ? 'linear-gradient(180deg, #052e16 0%, #0a1a0a 100%)'
+                : lost
+                ? 'linear-gradient(180deg, #3b0a0a 0%, #1a0404 100%)'
+                : 'linear-gradient(180deg, #1f1f2e 0%, #0a0a1a 100%)'
+              const headerBorder = won  ? 'rgba(34,197,94,0.35)'
+                                 : lost ? 'rgba(239,68,68,0.35)'
+                                 :        'rgba(156,163,175,0.35)'
+              const headerText  = won  ? 'text-green-400'
+                                : lost ? 'text-red-400'
+                                :        'text-gray-300'
+              const headerLabel = won  ? '🏆 VICTORY'
+                                : lost ? '💀 DEFEAT'
+                                :        '🤝 DRAW'
+              return (
               <div className="rounded-2xl overflow-hidden" style={{
-                background: result.winner === 'player'
-                  ? 'linear-gradient(180deg, #052e16 0%, #0a1a0a 100%)'
-                  : 'linear-gradient(180deg, #3b0a0a 0%, #1a0404 100%)',
-                border: `1px solid ${result.winner === 'player' ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)'}`,
+                background: headerBg,
+                border: `1px solid ${headerBorder}`,
               }}>
-                {/* Win / Loss header */}
+                {/* Win / Loss / Draw header */}
                 <div className="p-5 text-center">
-                  <p className={`font-game font-black text-5xl mb-2 victory-in ${
-                    result.winner === 'player' ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {result.winner === 'player' ? '🏆 VICTORY' : '💀 DEFEAT'}
+                  <p className={`font-game font-black text-5xl mb-2 victory-in ${headerText}`}>
+                    {headerLabel}
                   </p>
 
                   <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm font-game">
@@ -674,11 +721,14 @@ function FightContent() {
                     {(result.milestoneGems ?? 0) > 0 && (
                       <span className="text-yellow-300">🎯 Milestone +{result.milestoneGems} 💎</span>
                     )}
-                    {mode === 'tower' && result.winner === 'player' && result.newFloor && (
+                    {mode === 'tower' && won && result.newFloor && (
                       <span className="text-orange-300">⬆️ Floor {result.newFloor}!</span>
                     )}
-                    {mode === 'tower' && result.winner === 'enemy' && (
+                    {mode === 'tower' && lost && (
                       <span className="text-red-400">Tower resets to Floor 1</span>
+                    )}
+                    {mode === 'tower' && drew && (
+                      <span className="text-gray-400">Floor unchanged</span>
                     )}
                     {mode === 'pvp' && result.opponentName && (
                       <span className="text-pink-300">vs {result.opponentName}</span>
@@ -687,7 +737,7 @@ function FightContent() {
                 </div>
 
                 {/* Equipment drop banner — pops in with the XP bars */}
-                {result.winner === 'player' && showXpBars && result.equipmentDropped && (() => {
+                {won && showXpBars && result.equipmentDropped && (() => {
                   const drop = result.equipmentDropped
                   const color = DROP_RARITY_COLOR[drop.rarity]
                   return (
@@ -712,7 +762,7 @@ function FightContent() {
                 })()}
 
                 {/* XP bars — animate in after brief delay */}
-                {result.winner === 'player' && showXpBars && (
+                {won && showXpBars && (
                   <div className="px-5 pb-4 space-y-4" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
                     <p className="font-game text-[10px] text-gray-600 tracking-widest pt-4">XP EARNED</p>
 
@@ -741,7 +791,7 @@ function FightContent() {
                     )}
 
                     {/* Player account XP */}
-                    {(result.playerXpGained ?? 0) > 0 && (() => {
+                    {won && (result.playerXpGained ?? 0) > 0 && (() => {
                       const rank = getHunterRank(prePlayerLevel)
                       return (
                         <div>
@@ -771,7 +821,7 @@ function FightContent() {
 
                 {/* Action buttons */}
                 <div className="p-4 pt-0 flex gap-2">
-                  {result.winner === 'player' && mode === 'campaign' && stageNum < 5 && (
+                  {won && mode === 'campaign' && stageNum < 5 && (
                     <Link
                       href={`/battle/fight?mode=campaign&arc=${arcNum}&stage=${stageNum + 1}`}
                       onClick={() => resetFight()}
@@ -781,7 +831,7 @@ function FightContent() {
                       Next Stage →
                     </Link>
                   )}
-                  {result.winner === 'player' && mode === 'campaign' && stageNum === 5 && (
+                  {won && mode === 'campaign' && stageNum === 5 && (
                     <Link
                       href={arcNum < CAMPAIGN.length ? `/battle/campaign/${arcNum + 1}` : '/battle/campaign'}
                       className="flex-1 font-game font-bold rounded-xl py-3 text-center text-sm transition-all hover:brightness-110"
@@ -790,7 +840,7 @@ function FightContent() {
                       {arcNum < CAMPAIGN.length ? 'Next Arc →' : '🏆 All Done!'}
                     </Link>
                   )}
-                  {result.winner === 'player' && mode === 'tower' && result.newFloor && (
+                  {won && mode === 'tower' && result.newFloor && (
                     <button
                       onClick={() => resetFight()}
                       className="flex-1 font-game font-bold rounded-xl py-3 text-center text-sm transition-all hover:brightness-110"
@@ -805,8 +855,8 @@ function FightContent() {
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#d1d5db' }}
                   >
                     {mainId
-                      ? (result.winner === 'player' ? 'Pick Different' : 'Pick Different')
-                      : (result.winner === 'player' && mode === 'tower' ? 'Stay & Re-pick' : result.winner === 'player' ? 'Again' : 'Retry')}
+                      ? 'Pick Different'
+                      : (won && mode === 'tower' ? 'Stay & Re-pick' : won ? 'Again' : drew ? 'Try Again' : 'Retry')}
                   </button>
                   <Link
                     href={backHref}
@@ -817,7 +867,8 @@ function FightContent() {
                   </Link>
                 </div>
               </div>
-            )}
+              )
+            })()}
           </>
         )}
 

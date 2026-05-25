@@ -74,12 +74,22 @@ export function trainerXpYield(rarity: 'common' | 'rare' | 'epic' | 'legendary',
 
 // Apply XP gain — handles multi-level roll-over and collects milestone gems.
 // Returns the new level, leftover xp, total milestone gems earned, and levels gained.
+//
+// Plain English: if a character is already at the max level for their current
+// stars, we DON'T discard the XP they had banked — we just refuse to add more.
+// That way when they star up later (raising the cap), the XP they earned is
+// still there to push them toward the next level.
 export function applyXP(
   currentLevel: number,
   currentXp: number,
   xpGained: number,
   maxLevel: number,
 ): { newLevel: number; newXp: number; gemsToAward: number; levelsGained: number } {
+  // Already capped → keep what was banked, ignore new XP
+  if (currentLevel >= maxLevel) {
+    return { newLevel: currentLevel, newXp: currentXp, gemsToAward: 0, levelsGained: 0 }
+  }
+
   let level = currentLevel
   let xp = currentXp + xpGained
   let gemsToAward = 0
@@ -92,7 +102,7 @@ export function applyXP(
     gemsToAward += MILESTONE_GEMS[level] ?? 0
   }
 
-  // At max level, excess XP is discarded
+  // We just hit the cap in this call — any leftover XP from the last roll-over is discarded.
   if (level >= maxLevel) xp = 0
 
   return { newLevel: level, newXp: xp, gemsToAward, levelsGained }

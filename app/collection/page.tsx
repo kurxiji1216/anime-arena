@@ -156,11 +156,11 @@ export default function CollectionPage() {
       setUpgradeMsg(data.error)
     } else {
       setGems(data.gemsRemaining)
-      // Update local state — xp resets to 0 on gem level-up
-      const updated = { ...selected, level: data.newLevel, xp: 0 }
+      // Keep banked XP — gem level-ups no longer wipe it (server change C8)
+      const updated = { ...selected, level: data.newLevel }
       setSelected(updated)
       setOwned(prev => prev.map(o =>
-        o.character.id === selected.character.id ? { ...o, level: data.newLevel, xp: 0 } : o
+        o.character.id === selected.character.id ? { ...o, level: data.newLevel } : o
       ))
       const milestoneNote = data.milestoneGems > 0 ? ` 🎯 +${data.milestoneGems}💎 milestone!` : ''
       setUpgradeMsg(`⬆️ Now Level ${data.newLevel}! (−${data.gemsSpent} 💎)${milestoneNote}`)
@@ -787,7 +787,7 @@ export default function CollectionPage() {
                           <button
                             onClick={train}
                             disabled={training || selectedTrainers.size === 0}
-                            className="flex-2 flex-1 font-game font-bold text-xs rounded-lg py-2 transition-all hover:brightness-110 disabled:opacity-40"
+                            className="flex-1 font-game font-bold text-xs rounded-lg py-2 transition-all hover:brightness-110 disabled:opacity-40"
                             style={{ background: 'rgba(34,197,94,0.25)', border: '1px solid rgba(34,197,94,0.55)', color: '#86efac' }}
                           >
                             {training ? 'Training...' : `Train (+${previewXp} XP, ${selectedTrainers.size} card${selectedTrainers.size === 1 ? '' : 's'})`}

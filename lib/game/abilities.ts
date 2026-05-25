@@ -824,8 +824,8 @@ export const ABILITIES: Record<string, Ability> = {
   'Renji Abarai': {
     name: 'Hikotsu Taiho',
     icon: '🐍',
-    description: 'On turn 3, fires a baboon-king blast dealing 3× damage.',
-    effect: { turnXAttack: { turn: 3, mult: 3 } },
+    description: 'On turn 3, fires a baboon-king blast dealing 3× damage (pierces DEF).',
+    effect: { turnXAttack: { turn: 3, mult: 3, ignoreDef: true } },
   },
   'Byakuya Kuchiki': {
     name: 'Senka',
@@ -881,4 +881,24 @@ export function getAbility(characterName: string): Ability | null {
 
 export function hasAbility(characterName: string): boolean {
   return characterName in ABILITIES
+}
+
+// Returns a fresh deep copy of the ability so the battle engine can never
+// mutate the shared singleton (which would leak state across concurrent
+// battles). Use this any time you're about to hand an ability to runBattle().
+export function getAbilityCopy(characterName: string): Ability | null {
+  const a = ABILITIES[characterName]
+  if (!a) return null
+  return {
+    name:        a.name,
+    icon:        a.icon,
+    description: a.description,
+    effect:      cloneEffect(a.effect),
+  }
+}
+
+function cloneEffect(eff: AbilityEffect): AbilityEffect {
+  // structuredClone is available in Node 17+ and all modern browsers. It deep-clones
+  // plain objects safely (and supports nested objects like multiHitChance).
+  return structuredClone(eff)
 }

@@ -68,37 +68,28 @@ export default function LeaderboardPage() {
           .order('tower_best_floor', { ascending: false })
           .limit(20),
 
-        // Collection: count unique characters per user
+        // Collection: top 20 from the view (SQL-side GROUP BY, much faster + scales)
         supabase
-          .from('user_characters')
-          .select('user_id')
-          .limit(5000),
+          .from('collection_leaderboard')
+          .select('user_id, total')
+          .limit(20),
       ])
 
       if (rankRes.data)  setRanks(rankRes.data)
       if (pvpRes.data)   setPvp(pvpRes.data)
       if (towerRes.data) setTower(towerRes.data)
 
-      // Roll up collection counts
-      if (colRes.data) {
-        const counts: Record<string, number> = {}
-        for (const row of colRes.data as { user_id: string }[]) {
-          counts[row.user_id] = (counts[row.user_id] ?? 0) + 1
-        }
-        const topIds = Object.entries(counts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 20)
-          .map(([uid]) => uid)
-
+      // Hydrate usernames for the top-20 collectors
+      if (colRes.data && colRes.data.length > 0) {
+        const topRows = colRes.data as { user_id: string; total: number }[]
+        const topIds = topRows.map(r => r.user_id)
         const { data: profileRows } = await supabase
           .from('profiles')
           .select('user_id, username')
           .in('user_id', topIds)
-
         const nameMap: Record<string, string | null> = {}
         for (const p of profileRows ?? []) nameMap[p.user_id] = p.username
-
-        setCollection(topIds.map(uid => ({ user_id: uid, username: nameMap[uid] ?? null, total: counts[uid] })))
+        setCollection(topRows.map(r => ({ user_id: r.user_id, username: nameMap[r.user_id] ?? null, total: r.total })))
       }
 
       setLoading(false)

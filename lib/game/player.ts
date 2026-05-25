@@ -38,10 +38,10 @@ export function playerXpToLevel(level: number): number {
 
 // Returns the current Hunter Rank info for a given player level
 export function getHunterRank(level: number) {
-  return (
-    [...RANK_THRESHOLDS].reverse().find(r => level >= r.minLevel) ??
-    RANK_THRESHOLDS[0]
-  )
+  for (let i = RANK_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (level >= RANK_THRESHOLDS[i].minLevel) return RANK_THRESHOLDS[i]
+  }
+  return RANK_THRESHOLDS[0]
 }
 
 // Passive stat multiplier applied to all character stats in PvE (NOT PvP)

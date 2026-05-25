@@ -30,15 +30,26 @@ export function freshQuests(): DailyQuests {
   }
 }
 
+// Validates that an arbitrary JSON value actually looks like a DailyQuests
+// object before we trust it. Without this, a corrupted DB column would crash
+// the app downstream when we try to .map over `quests.quests`.
+function isDailyQuests(x: unknown): x is DailyQuests {
+  if (!x || typeof x !== 'object') return false
+  const d = x as Partial<DailyQuests>
+  if (typeof d.date !== 'string' || !Array.isArray(d.quests)) return false
+  return d.quests.every(q =>
+    q != null
+    && typeof q === 'object'
+    && typeof (q as Quest).key     === 'string'
+    && typeof (q as Quest).done    === 'boolean'
+    && typeof (q as Quest).claimed === 'boolean',
+  )
+}
+
 // Returns today's quests, resetting if stored data is from a previous day
+// or if the stored value is missing/malformed.
 export function resolveQuests(stored: unknown): DailyQuests {
-  if (
-    stored !== null &&
-    typeof stored === 'object' &&
-    (stored as DailyQuests).date === todayDate()
-  ) {
-    return stored as DailyQuests
-  }
+  if (isDailyQuests(stored) && stored.date === todayDate()) return stored
   return freshQuests()
 }
 

@@ -26,7 +26,6 @@ const CATEGORY_COLOR: Record<AchievementCategory, string> = {
 
 export default function AchievementsPage() {
   const [achievements, setAchievements] = useState<AchievementState[]>([])
-  const [gems,         setGems]         = useState(0)
   const [loading,      setLoading]      = useState(true)
   const [claiming,     setClaiming]     = useState<string | null>(null)
   const [tab,          setTab]          = useState<AchievementCategory | 'all'>('all')
@@ -49,9 +48,7 @@ export default function AchievementsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key }),
     })
-    const data = await res.json()
     if (res.ok) {
-      setGems(data.gemsTotal)
       setAchievements(prev => prev.map(a => a.key === key ? { ...a, claimed: true } : a))
     }
     setClaiming(null)

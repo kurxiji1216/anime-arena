@@ -546,9 +546,47 @@ export function applyEquipmentStats(
   }
 }
 
+// ─── Schema-driven merge tables ───────────────────────────────────────────────
+//
+// Plain English: equipment can grant any of the same effects an ability can grant.
+// Instead of hand-listing each "if (e.foo) ..." we use these tables. Adding a new
+// effect to a new piece of equipment now just means dropping the key into the
+// right table — the merger picks it up automatically.
+
+const ADD_NUMERIC_KEYS = [
+  'regenPct', 'lifestealPct', 'dodgeChance', 'critChance', 'counterPct',
+  'instantKillPerTurnChance', 'bonusDamageFromOwnDefPct', 'bonusDamageFromEnemyMaxHpPct',
+  'absorbPct', 'painPackerPct', 'ignoreDefChance', 'redirectChance',
+  'damageReductionPct', 'firstAttackReductionPct', 'firstHitTakenBonusPct',
+  'copyAtkOnFirstHit', 'extraAttackChance', 'atkRampPct', 'defRampPct',
+  'enemyBurnPct', 'enemyAtkRampDownPct', 'enemyDefDecayPct',
+  'firstTurnAtkBoost', 'firstNAttacksDodge', 'everyNthDouble',
+] as const
+
+const MAX_NUMERIC_KEYS = ['critMult'] as const
+
+const OR_BOOLEAN_KEYS = [
+  'firstStrike', 'firstStrikeRound1', 'openerIgnoreDef', 'surviveFatalOnce',
+] as const
+
+// Structured effects — first non-null value wins. Equipment can only grant these
+// if the base character doesn't already have one. (Compound stacking would be
+// confusing here; e.g. two alwaysMultiHits would have to be reconciled.)
+const FIRST_WINS_STRUCT_KEYS = [
+  'alwaysMultiHit', 'multiHitChance', 'openerMultiHit', 'openerCrit',
+  'openerSpeedDebuff', 'firstNAttacksReduction', 'lowHpAtkBoost',
+  'lowHpHealOnce', 'lowHpDamageReduction', 'lowHpTransform', 'aboveHpAtkBoost',
+  'reviveOnce', 'regenEveryNTurns', 'turnXStun', 'turnXAttack', 'turnXTransform',
+  'turnXBuff', 'turnXBonusEnemyMaxHp', 'turnXSacrifice', 'turnXSwapAtkIfEnemyHigher',
+  'chargeRelease', 'afterEnemyAttacksBuff', 'alternatingBuff', 'stunChance',
+  'burnOnHitChance', 'chanceMaxHpDmg', 'statBuffPct',
+] as const
+
 // Merge a character's ability with equipment-granted effects.
-// Most numerical effects ADD. critMult takes the max. Booleans OR. Some structured
-// effects (alwaysMultiHit, etc.) take the equipment value if the ability doesn't have one.
+// - Numeric effects ADD (e.g. two pieces granting +regen stack).
+// - critMult takes the MAX (so you don't accidentally end up with a 4× crit).
+// - Booleans OR.
+// - Structured effects use first-wins (base ability takes precedence over equipment).
 export function mergeAbilityWithEquipment(
   characterName: string,
   equipped: Equipment[],
@@ -556,41 +594,44 @@ export function mergeAbilityWithEquipment(
   const base = getAbility(characterName)
   if (!base && equipped.length === 0) return null
 
-  const baseEffect: AbilityEffect = base?.effect ? { ...base.effect } : {}
+  // Deep clone so we never mutate the shared singleton in ABILITIES
+  const out: AbilityEffect = base?.effect ? structuredClone(base.effect) : {}
 
   for (const eq of equipped) {
     const e = eq.effect
 
-    // Additive numerical effects
-    if (e.regenPct)                    baseEffect.regenPct                    = (baseEffect.regenPct                    ?? 0) + e.regenPct
-    if (e.lifestealPct)                baseEffect.lifestealPct                = (baseEffect.lifestealPct                ?? 0) + e.lifestealPct
-    if (e.dodgeChance)                 baseEffect.dodgeChance                 = (baseEffect.dodgeChance                 ?? 0) + e.dodgeChance
-    if (e.critChance)                  baseEffect.critChance                  = (baseEffect.critChance                  ?? 0) + e.critChance
-    if (e.counterPct)                  baseEffect.counterPct                  = (baseEffect.counterPct                  ?? 0) + e.counterPct
-    if (e.instantKillPerTurnChance)    baseEffect.instantKillPerTurnChance    = (baseEffect.instantKillPerTurnChance    ?? 0) + e.instantKillPerTurnChance
-    if (e.bonusDamageFromOwnDefPct)    baseEffect.bonusDamageFromOwnDefPct    = (baseEffect.bonusDamageFromOwnDefPct    ?? 0) + e.bonusDamageFromOwnDefPct
-    if (e.bonusDamageFromEnemyMaxHpPct) baseEffect.bonusDamageFromEnemyMaxHpPct = (baseEffect.bonusDamageFromEnemyMaxHpPct ?? 0) + e.bonusDamageFromEnemyMaxHpPct
-    if (e.absorbPct)                   baseEffect.absorbPct                   = (baseEffect.absorbPct                   ?? 0) + e.absorbPct
-    if (e.painPackerPct)               baseEffect.painPackerPct               = (baseEffect.painPackerPct               ?? 0) + e.painPackerPct
-    if (e.ignoreDefChance)             baseEffect.ignoreDefChance             = (baseEffect.ignoreDefChance             ?? 0) + e.ignoreDefChance
+    for (const k of ADD_NUMERIC_KEYS) {
+      const v = e[k] as number | undefined
+      if (v != null) {
+        const cur = (out[k] as number | undefined) ?? 0
+        ;(out as Record<string, unknown>)[k] = cur + v
+      }
+    }
 
-    // Take max for multipliers
-    if (e.critMult)                    baseEffect.critMult                    = Math.max(baseEffect.critMult ?? 2.0, e.critMult)
+    for (const k of MAX_NUMERIC_KEYS) {
+      const v = e[k] as number | undefined
+      if (v != null) {
+        const cur = (out[k] as number | undefined) ?? 2.0
+        ;(out as Record<string, unknown>)[k] = Math.max(cur, v)
+      }
+    }
 
-    // Boolean OR
-    if (e.firstStrike)                 baseEffect.firstStrike                 = true
-    if (e.firstStrikeRound1)           baseEffect.firstStrikeRound1           = true
-    if (e.openerIgnoreDef)             baseEffect.openerIgnoreDef             = true
+    for (const k of OR_BOOLEAN_KEYS) {
+      if (e[k]) (out as Record<string, unknown>)[k] = true
+    }
 
-    // Structured effects — only set if ability doesn't already define one
-    if (e.alwaysMultiHit && !baseEffect.alwaysMultiHit) baseEffect.alwaysMultiHit = e.alwaysMultiHit
-    if (e.multiHitChance  && !baseEffect.multiHitChance)  baseEffect.multiHitChance  = e.multiHitChance
+    for (const k of FIRST_WINS_STRUCT_KEYS) {
+      if (e[k] != null && out[k] == null) {
+        // Deep clone the equipment struct too, so future battles can't mutate it
+        ;(out as Record<string, unknown>)[k] = structuredClone(e[k])
+      }
+    }
   }
 
   return {
     name:        base?.name ?? 'Equipped',
     icon:        base?.icon ?? '⚙️',
     description: base?.description ?? 'Equipment-granted effects.',
-    effect:      baseEffect,
+    effect:      out,
   }
 }

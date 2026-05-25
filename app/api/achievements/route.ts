@@ -65,12 +65,19 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
 
-  const { key }: { key: AchievementKey } = await request.json()
+  let body: { key?: unknown }
+  try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
+  if (typeof body.key !== 'string') return NextResponse.json({ error: 'Missing achievement key' }, { status: 400 })
+  const key = body.key as AchievementKey
 
   const achievement = ACHIEVEMENTS.find(a => a.key === key)
   if (!achievement) return NextResponse.json({ error: 'Achievement not found' }, { status: 404 })
 
-  const { profile, params, claimed } = await gatherStats(user.id, supabase)
+  // The "is this condition actually met?" check stays in TS — it needs joins
+  // across profiles, user_characters, and campaign_progress. Server-authoritative
+  // because it's run server-side, but not race-protected. The RPC below DOES
+  // protect against double-claim races.
+  const { params, claimed } = await gatherStats(user.id, supabase)
 
   if (claimed.includes(key)) {
     return NextResponse.json({ error: 'Already claimed' }, { status: 400 })
@@ -81,15 +88,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Condition not met yet' }, { status: 400 })
   }
 
-  const newAchievements = [...claimed, key]
-  const newGems = (profile?.gems ?? 0) + achievement.reward
+  const { data: rows, error } = await supabase.rpc('claim_achievement', {
+    p_key:    key,
+    p_reward: achievement.reward,
+  })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const row = (rows as { success: boolean; error_message: string | null; gems_awarded: number; gems_total: number }[] | null)?.[0]
+  if (!row) return NextResponse.json({ error: 'Claim failed' }, { status: 500 })
+  if (!row.success) return NextResponse.json({ error: row.error_message ?? 'Already claimed' }, { status: 400 })
 
-  const { error } = await supabase
-    .from('profiles')
-    .update({ achievements: newAchievements, gems: newGems })
-    .eq('user_id', user.id)
-
-  if (error) return NextResponse.json({ error: 'Failed to claim' }, { status: 500 })
-
-  return NextResponse.json({ gemsAwarded: achievement.reward, gemsTotal: newGems })
+  return NextResponse.json({ gemsAwarded: row.gems_awarded, gemsTotal: row.gems_total })
 }

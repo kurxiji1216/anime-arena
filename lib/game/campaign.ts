@@ -32,7 +32,8 @@ export function stageEnemyMultiplier(arc: number, stage: number): number {
 // Gem reward for first clearing a stage — scales with arc number
 const BASE_STAGE_REWARDS = [5, 5, 10, 10, 25]
 export function stageGemReward(arc: number, stage: number): number {
-  const base = BASE_STAGE_REWARDS[stage - 1]
+  // Defensive: out-of-range stage shouldn't NaN — fall back to 0.
+  const base = BASE_STAGE_REWARDS[stage - 1] ?? 0
   return Math.round(base * (1 + (arc - 1) * 0.15))
 }
 
@@ -183,13 +184,30 @@ export function getStage(arcNumber: number, stageNumber: number): Stage | undefi
   return getArc(arcNumber)?.stages.find(s => s.stage === stageNumber)
 }
 
+// Total stages per arc (every arc has 5 stages; centralized so it isn't a magic number)
+export const STAGES_PER_ARC = 5
+
+// Helper used by isArcUnlocked / isArcComplete and by the achievements + tutorial checks.
+// Returns true if all 5 stages of `arcNumber` have been cleared.
+export function isArcFullyCleared(
+  arcNumber: number,
+  clearedStages: { arc: number; stage: number }[],
+): boolean {
+  const set = new Set(
+    clearedStages.filter(c => c.arc === arcNumber).map(c => c.stage),
+  )
+  for (let s = 1; s <= STAGES_PER_ARC; s++) {
+    if (!set.has(s)) return false
+  }
+  return true
+}
+
 export function isArcUnlocked(
   arcNumber: number,
   clearedStages: { arc: number; stage: number }[],
 ): boolean {
   if (arcNumber === 1) return true
-  const prev = arcNumber - 1
-  return [1, 2, 3, 4, 5].every(s => clearedStages.some(c => c.arc === prev && c.stage === s))
+  return isArcFullyCleared(arcNumber - 1, clearedStages)
 }
 
 export function isStageUnlocked(
@@ -214,5 +232,5 @@ export function isArcComplete(
   arcNumber: number,
   clearedStages: { arc: number; stage: number }[],
 ): boolean {
-  return [1, 2, 3, 4, 5].every(s => clearedStages.some(c => c.arc === arcNumber && c.stage === s))
+  return isArcFullyCleared(arcNumber, clearedStages)
 }

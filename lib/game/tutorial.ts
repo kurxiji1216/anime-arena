@@ -4,6 +4,8 @@
 // against existing profile data — no new tracking required for the conditions.
 // Once a player claims all four, the panel auto-hides on the home page.
 
+import { isArcFullyCleared } from './campaign'
+
 export type TutorialStepKey = 'first_pull' | 'first_win' | 'power_up' | 'arc1_champion'
 
 export type TutorialStep = {
@@ -70,10 +72,7 @@ export function checkTutorialConditions(params: {
   if (totalWins  >= 1) met.add('first_win')
   if (chars.some(c => (c.level ?? 1) >= 2)) met.add('power_up')
 
-  const arc1Stages = [1, 2, 3, 4, 5]
-  if (arc1Stages.every(s => cleared.some(c => c.arc === 1 && c.stage === s))) {
-    met.add('arc1_champion')
-  }
+  if (isArcFullyCleared(1, cleared)) met.add('arc1_champion')
 
   return met
 }

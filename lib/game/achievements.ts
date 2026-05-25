@@ -1,6 +1,8 @@
 // ─── Achievement System ───────────────────────────────────────────────────────
 // One-time milestones that award gems. Conditions are checked server-side.
 
+import { isArcFullyCleared } from './campaign'
+
 export type AchievementCategory = 'gacha' | 'battle' | 'progress'
 
 export type AchievementKey =
@@ -80,7 +82,7 @@ export function checkConditions(params: {
   const { totalPulls, uniqueChars, hasLegendary, totalWins, cleared, towerBestFloor, pvpWins, playerLevel, chars } = params
   const met = new Set<AchievementKey>()
 
-  const arcDone = (n: number) => [1,2,3,4,5].every(s => cleared.some(c => c.arc === n && c.stage === s))
+  const arcDone = (n: number) => isArcFullyCleared(n, cleared)
 
   // Gacha
   if (totalPulls >= 1)   met.add('first_pull')
@@ -98,7 +100,7 @@ export function checkConditions(params: {
   if (arcDone(1))  met.add('clear_arc1')
   if (arcDone(5))  met.add('clear_arc5')
   if (arcDone(10)) met.add('clear_arc10')
-  if (Array.from({ length: 24 }, (_, i) => i + 1).every(arcDone)) met.add('clear_all_arcs')
+  if ([...Array(24).keys()].every(i => arcDone(i + 1))) met.add('clear_all_arcs')
   if (towerBestFloor >= 10) met.add('tower_floor_10')
   if (towerBestFloor >= 25) met.add('tower_floor_25')
   if (pvpWins >= 1)  met.add('pvp_first_win')
@@ -114,20 +116,21 @@ export function checkConditions(params: {
 }
 
 // Progress value toward a target (for showing X/Y bars in the UI)
-export function achievementProgress(key: AchievementKey, params: Parameters<typeof checkConditions>[0]): number {
-  switch (key) {
-    case 'pulls_10':       return Math.min(params.totalPulls, 10)
-    case 'pulls_50':       return Math.min(params.totalPulls, 50)
-    case 'pulls_100':      return Math.min(params.totalPulls, 100)
-    case 'collector_10':   return Math.min(params.uniqueChars, 10)
-    case 'collector_50':   return Math.min(params.uniqueChars, 50)
-    case 'wins_10':        return Math.min(params.totalWins, 10)
-    case 'wins_50':        return Math.min(params.totalWins, 50)
-    case 'tower_floor_10': return Math.min(params.towerBestFloor, 10)
-    case 'tower_floor_25': return Math.min(params.towerBestFloor, 25)
-    case 'pvp_wins_10':    return Math.min(params.pvpWins, 10)
-    case 'reach_d_rank':   return Math.min(params.playerLevel, 10)
-    case 'reach_s_rank':   return Math.min(params.playerLevel, 50)
-    default:               return 0
-  }
+type ProgressParams = Parameters<typeof checkConditions>[0]
+const PROGRESS_GETTERS: Partial<Record<AchievementKey, (p: ProgressParams) => number>> = {
+  pulls_10:       p => Math.min(p.totalPulls,    10),
+  pulls_50:       p => Math.min(p.totalPulls,    50),
+  pulls_100:      p => Math.min(p.totalPulls,    100),
+  collector_10:   p => Math.min(p.uniqueChars,   10),
+  collector_50:   p => Math.min(p.uniqueChars,   50),
+  wins_10:        p => Math.min(p.totalWins,     10),
+  wins_50:        p => Math.min(p.totalWins,     50),
+  tower_floor_10: p => Math.min(p.towerBestFloor, 10),
+  tower_floor_25: p => Math.min(p.towerBestFloor, 25),
+  pvp_wins_10:    p => Math.min(p.pvpWins,       10),
+  reach_d_rank:   p => Math.min(p.playerLevel,   10),
+  reach_s_rank:   p => Math.min(p.playerLevel,   50),
+}
+export function achievementProgress(key: AchievementKey, params: ProgressParams): number {
+  return PROGRESS_GETTERS[key]?.(params) ?? 0
 }
